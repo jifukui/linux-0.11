@@ -81,9 +81,9 @@ check_x87:
  */
  /**设置中断描述符表*/
 setup_idt:
-	!将ignore_int的地址装入dx寄存器中
+	#将ignore_int的地址装入dx寄存器中
 	lea ignore_int,%edx
-	!设置ax寄存器的值
+	#设置ax寄存器的值
 	movl $0x00080000,%eax
 	movw %dx,%ax		/* selector = 0x0008 = cs */
 	movw $0x8E00,%dx	/* interrupt gate - dpl=0, present */
