@@ -6,8 +6,9 @@ RAMDISK = #-DRAMDISK=512
 
 AS86	=as86 -0 -a
 LD86	=ld86 -0
-
+#源编译器为gas 修改为as
 AS	=as
+#源连接器为gld修改为ld
 LD	=ld
 LDFLAGS	=-s -x -M
 CC	=gcc $(RAMDISK)
@@ -31,7 +32,8 @@ LIBS	=lib/lib.a
 	$(CC) $(CFLAGS) \
 	-nostdinc -Iinclude -S -o $*.s $<
 .s.o:
-	$(AS) -c -o $*.o $<
+	#$(AS) -c -o $*.o $<
+	$(AS)  -o $*.o $<
 .c.o:
 	$(CC) $(CFLAGS) \
 	-nostdinc -Iinclude -c -o $*.o $<
