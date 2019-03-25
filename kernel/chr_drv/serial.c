@@ -23,6 +23,7 @@
 extern void rs1_interrupt(void);
 extern void rs2_interrupt(void);
 
+/**初始化函数*/
 static void init(int port)
 {
 	outb_p(0x80,port+3);	/* set DLAB of line control reg */
@@ -34,6 +35,7 @@ static void init(int port)
 	(void)inb(port);	/* read data port to reset things (?) */
 }
 
+/**rs 初始化哈数*/
 void rs_init(void)
 {
 	set_intr_gate(0x24,rs1_interrupt);
@@ -50,10 +52,13 @@ void rs_init(void)
  *
  *	void _rs_write(struct tty_struct * tty);
  */
+/**rs写函数*/
 void rs_write(struct tty_struct * tty)
 {
 	cli();
 	if (!EMPTY(tty->write_q))
+	{
 		outb(inb_p(tty->write_q.data+1)|0x02,tty->write_q.data+1);
+	}
 	sti();
 }

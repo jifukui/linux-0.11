@@ -85,15 +85,18 @@ static void sysbeep(void);
 #define RESPONSE "\033[?1;2c"
 
 /* NOTE! gotoxy thinks x==video_num_columns is ok */
+/***/
 static inline void gotoxy(unsigned int new_x,unsigned int new_y)
 {
 	if (new_x > video_num_columns || new_y >= video_num_lines)
+	{
 		return;
+	}
 	x=new_x;
 	y=new_y;
 	pos=origin + y*video_size_row + (x<<1);
 }
-
+/***/
 static inline void set_origin(void)
 {
 	cli();
@@ -103,16 +106,18 @@ static inline void set_origin(void)
 	outb_p(0xff&((origin-video_mem_start)>>1), video_port_val);
 	sti();
 }
-
+/***/
 static void scrup(void)
 {
 	if (video_type == VIDEO_TYPE_EGAC || video_type == VIDEO_TYPE_EGAM)
 	{
-		if (!top && bottom == video_num_lines) {
+		if (!top && bottom == video_num_lines) 
+		{
 			origin += video_size_row;
 			pos += video_size_row;
 			scr_end += video_size_row;
-			if (scr_end > video_mem_end) {
+			if (scr_end > video_mem_end) 
+			{
 				__asm__("cld\n\t"
 					"rep\n\t"
 					"movsl\n\t"
@@ -127,7 +132,9 @@ static void scrup(void)
 				scr_end -= origin-video_mem_start;
 				pos -= origin-video_mem_start;
 				origin = video_mem_start;
-			} else {
+			} 
+			else 
+			{
 				__asm__("cld\n\t"
 					"rep\n\t"
 					"stosw"
@@ -137,7 +144,9 @@ static void scrup(void)
 					:"cx","di");
 			}
 			set_origin();
-		} else {
+		} 
+		else 
+		{
 			__asm__("cld\n\t"
 				"rep\n\t"
 				"movsl\n\t"
@@ -167,6 +176,7 @@ static void scrup(void)
 	}
 }
 
+/***/
 static void scrdown(void)
 {
 	if (video_type == VIDEO_TYPE_EGAC || video_type == VIDEO_TYPE_EGAM)
@@ -203,7 +213,8 @@ static void scrdown(void)
 
 static void lf(void)
 {
-	if (y+1<bottom) {
+	if (y+1<bottom) 
+	{
 		y++;
 		pos += video_size_row;
 		return;
@@ -213,7 +224,8 @@ static void lf(void)
 
 static void ri(void)
 {
-	if (y>top) {
+	if (y>top) 
+	{
 		y--;
 		pos -= video_size_row;
 		return;
@@ -229,7 +241,8 @@ static void cr(void)
 
 static void del(void)
 {
-	if (x) {
+	if (x) 
+	{
 		pos -= 2;
 		x--;
 		*(unsigned short *)pos = video_erase_char;
@@ -241,7 +254,8 @@ static void csi_J(int par)
 	long count __asm__("cx");
 	long start __asm__("di");
 
-	switch (par) {
+	switch (par) 
+	{
 		case 0:	/* erase from cursor to end of display */
 			count = (scr_end-pos)>>1;
 			start = pos;
@@ -270,7 +284,8 @@ static void csi_K(int par)
 	long count __asm__("cx");
 	long start __asm__("di");
 
-	switch (par) {
+	switch (par) 
+	{
 		case 0:	/* erase from cursor to end of line */
 			if (x>=video_num_columns)
 				return;
@@ -301,15 +316,19 @@ void csi_m(void)
 	int i;
 
 	for (i=0;i<=npar;i++)
-		switch (par[i]) {
+	{
+		switch (par[i]) 
+		{
 			case 0:attr=0x07;break;
 			case 1:attr=0x0f;break;
 			case 4:attr=0x0f;break;
 			case 7:attr=0x70;break;
 			case 27:attr=0x07;break;
 		}
+	}
 }
 
+/***/
 static inline void set_cursor(void)
 {
 	cli();
@@ -325,7 +344,8 @@ static void respond(struct tty_struct * tty)
 	char * p = RESPONSE;
 
 	cli();
-	while (*p) {
+	while (*p) 
+	{
 		PUTCH(*p,tty->read_q);
 		p++;
 	}
@@ -339,7 +359,8 @@ static void insert_char(void)
 	unsigned short tmp, old = video_erase_char;
 	unsigned short * p = (unsigned short *) pos;
 
-	while (i++<video_num_columns) {
+	while (i++<video_num_columns) 
+	{
 		tmp=*p;
 		*p=old;
 		old=tmp;
@@ -366,9 +387,12 @@ static void delete_char(void)
 	unsigned short * p = (unsigned short *) pos;
 
 	if (x>=video_num_columns)
+	{
 		return;
+	}
 	i = x;
-	while (++i < video_num_columns) {
+	while (++i < video_num_columns) 
+	{
 		*p = *(p+1);
 		p++;
 	}
@@ -391,43 +415,67 @@ static void delete_line(void)
 static void csi_at(unsigned int nr)
 {
 	if (nr > video_num_columns)
+	{
 		nr = video_num_columns;
+	}
 	else if (!nr)
+	{
 		nr = 1;
+	}
 	while (nr--)
+	{
 		insert_char();
+	}
 }
 
 static void csi_L(unsigned int nr)
 {
 	if (nr > video_num_lines)
+	{
 		nr = video_num_lines;
+	}
 	else if (!nr)
+	{
 		nr = 1;
+	}
 	while (nr--)
+	{
 		insert_line();
+	}
 }
 
 static void csi_P(unsigned int nr)
 {
 	if (nr > video_num_columns)
+	{
 		nr = video_num_columns;
+	}
 	else if (!nr)
+	{
 		nr = 1;
+	}
 	while (nr--)
+	{
 		delete_char();
+	}
 }
 
 static void csi_M(unsigned int nr)
 {
 	if (nr > video_num_lines)
+	{
 		nr = video_num_lines;
+	}
 	else if (!nr)
+	{
 		nr=1;
+	}
 	while (nr--)
+	{
 		delete_line();
-}
 
+	}
+}
 static int saved_x=0;
 static int saved_y=0;
 
@@ -448,12 +496,16 @@ void con_write(struct tty_struct * tty)
 	char c;
 
 	nr = CHARS(tty->write_q);
-	while (nr--) {
+	while (nr--) 
+	{
 		GETCH(tty->write_q,c);
-		switch(state) {
+		switch(state) 
+		{
 			case 0:
-				if (c>31 && c<127) {
-					if (x>=video_num_columns) {
+				if (c>31 && c<127) 
+				{
+					if (x>=video_num_columns) 
+					{
 						x -= video_num_columns;
 						pos -= video_size_row;
 						lf();
@@ -464,102 +516,175 @@ void con_write(struct tty_struct * tty)
 						:"ax");
 					pos += 2;
 					x++;
-				} else if (c==27)
+				} 
+				else if (c==27)
+				{
 					state=1;
+				}
 				else if (c==10 || c==11 || c==12)
+				{
 					lf();
+				}
 				else if (c==13)
+				{
 					cr();
+				}
 				else if (c==ERASE_CHAR(tty))
+				{
 					del();
-				else if (c==8) {
-					if (x) {
+				}
+				else if (c==8) 
+				{
+					if (x) 
+					{
 						x--;
 						pos -= 2;
 					}
-				} else if (c==9) {
+				} 
+				else if (c==9) 
+				{
 					c=8-(x&7);
 					x += c;
 					pos += c<<1;
-					if (x>video_num_columns) {
+					if (x>video_num_columns) 
+					{
 						x -= video_num_columns;
 						pos -= video_size_row;
 						lf();
 					}
 					c=9;
-				} else if (c==7)
+				} 
+				else if (c==7)
+				{
 					sysbeep();
+				}
 				break;
 			case 1:
 				state=0;
 				if (c=='[')
+				{
 					state=2;
+				}
 				else if (c=='E')
+				{
 					gotoxy(0,y+1);
+				}
 				else if (c=='M')
+				{
 					ri();
+				}
 				else if (c=='D')
+				{
 					lf();
+				}
 				else if (c=='Z')
+				{
 					respond(tty);
+				}
 				else if (x=='7')
+				{
 					save_cur();
+				}
 				else if (x=='8')
+				{
 					restore_cur();
+				}
 				break;
 			case 2:
 				for(npar=0;npar<NPAR;npar++)
+				{
 					par[npar]=0;
+				}
 				npar=0;
 				state=3;
 				if (ques=(c=='?'))
+				{
 					break;
+				}
 			case 3:
-				if (c==';' && npar<NPAR-1) {
+				if (c==';' && npar<NPAR-1) 
+				{
 					npar++;
 					break;
-				} else if (c>='0' && c<='9') {
+				} 
+				else if (c>='0' && c<='9') 
+				{
 					par[npar]=10*par[npar]+c-'0';
 					break;
-				} else state=4;
+				} 
+				else
+				{
+					state=4;
+				}
 			case 4:
 				state=0;
-				switch(c) {
+				switch(c) 
+				{
 					case 'G': case '`':
-						if (par[0]) par[0]--;
+						if (par[0]) 
+						{
+							par[0]--;
+						}
 						gotoxy(par[0],y);
 						break;
 					case 'A':
-						if (!par[0]) par[0]++;
+						if (!par[0])
+						{
+							 par[0]++;
+						}
 						gotoxy(x,y-par[0]);
 						break;
 					case 'B': case 'e':
-						if (!par[0]) par[0]++;
+						if (!par[0]) 
+						{
+							par[0]++;
+						}
 						gotoxy(x,y+par[0]);
 						break;
 					case 'C': case 'a':
-						if (!par[0]) par[0]++;
+						if (!par[0]) 
+						{
+							par[0]++;
+						}
 						gotoxy(x+par[0],y);
 						break;
 					case 'D':
-						if (!par[0]) par[0]++;
+						if (!par[0]) 
+						{
+							par[0]++;
+						}
 						gotoxy(x-par[0],y);
 						break;
 					case 'E':
-						if (!par[0]) par[0]++;
+						if (!par[0]) 
+						{
+							par[0]++;
+						}
 						gotoxy(0,y+par[0]);
 						break;
 					case 'F':
-						if (!par[0]) par[0]++;
+						if (!par[0]) 
+						{
+							par[0]++;
+						}
 						gotoxy(0,y-par[0]);
 						break;
 					case 'd':
-						if (par[0]) par[0]--;
+						if (par[0]) 
+						{
+							par[0]--;
+						}
 						gotoxy(x,par[0]);
 						break;
 					case 'H': case 'f':
-						if (par[0]) par[0]--;
-						if (par[1]) par[1]--;
+						if (par[0]) 
+						{
+							par[0]--;
+						}
+						if (par[1]) 
+						{
+							par[1]--;
+						}
 						gotoxy(par[1],par[0]);
 						break;
 					case 'J':
@@ -584,10 +709,16 @@ void con_write(struct tty_struct * tty)
 						csi_m();
 						break;
 					case 'r':
-						if (par[0]) par[0]--;
-						if (!par[1]) par[1] = video_num_lines;
-						if (par[0] < par[1] &&
-						    par[1] <= video_num_lines) {
+						if (par[0]) 
+						{
+							par[0]--;
+						}
+						if (!par[1]) 
+						{
+							par[1] = video_num_lines;
+						}
+						if (par[0] < par[1] &&par[1] <= video_num_lines) 
+						{
 							top=par[0];
 							bottom=par[1];
 						}
