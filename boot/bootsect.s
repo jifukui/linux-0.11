@@ -151,7 +151,7 @@ head:	.word 0			! current head								!设置头为当前头
 track:	.word 0			! current track								!设置磁道为当前磁道
 
 read_it:
-	mov ax,es														！设置ax的参数值
+	mov ax,es														!设置ax的参数值
 	test ax,#0x0fff													!执行逻辑与操作判断地址是否是64k地址对齐，如果是对齐的则ZF位为1
 die:	jne die			! es must be at 64kB boundary				!判断是否是64k地址对齐，如果不对齐循环执行
 	xor bx,bx		! bx is starting address within segment
