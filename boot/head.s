@@ -13,7 +13,7 @@
  */
 .text
 .globl _idt,_gdt,_pg_dir,_tmp_floppy_area
-!页目录存放位置
+/*页目录存放位置*/
 _pg_dir:
 startup_32:
 	!指向数据段，在段模式下CS为代码段，DS为数据段,SS为栈段，ED,FS,GS为附加段指针
@@ -22,9 +22,9 @@ startup_32:
 	mov %ax,%es
 	mov %ax,%fs
 	mov %ax,%gs
-	!设置堆栈指针的位置
+	/*设置堆栈指针的位置*/
 	lss _stack_start,%esp
-	!调用建立idt和gdt
+	/*调用建立idt和gdt*/
 	call setup_idt
 	call setup_gdt
 	movl $0x10,%eax		# reload all the segment registers
