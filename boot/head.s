@@ -16,7 +16,7 @@
 /*页目录存放位置*/
 _pg_dir:
 startup_32:
-	!指向数据段，在段模式下CS为代码段，DS为数据段,SS为栈段，ED,FS,GS为附加段指针
+	/*指向数据段，在段模式下CS为代码段，DS为数据段,SS为栈段，ED,FS,GS为附加段指针*/
 	movl $0x10,%eax
 	mov %ax,%ds
 	mov %ax,%es
