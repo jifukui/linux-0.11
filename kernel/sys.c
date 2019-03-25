@@ -74,7 +74,7 @@ int sys_setregid(int rgid, int egid)
 	}
 	return 0;
 }
-
+/**设置组ID*/
 int sys_setgid(int gid)
 {
 	return(sys_setregid(gid, gid));
@@ -151,12 +151,12 @@ int sys_setreuid(int ruid, int euid)
 	}
 	return 0;
 }
-
+/**设置用户ID*/
 int sys_setuid(int uid)
 {
 	return(sys_setreuid(uid, uid));
 }
-
+/***/
 int sys_stime(long * tptr)
 {
 	if (!suser())
@@ -166,7 +166,7 @@ int sys_stime(long * tptr)
 	startup_time = get_fs_long((unsigned long *)tptr) - jiffies/HZ;
 	return 0;
 }
-
+/***/
 int sys_times(struct tms * tbuf)
 {
 	if (tbuf) 
@@ -179,7 +179,7 @@ int sys_times(struct tms * tbuf)
 	}
 	return jiffies;
 }
-
+/***/
 int sys_brk(unsigned long end_data_seg)
 {
 	if (end_data_seg >= current->end_code &&end_data_seg < current->start_stack - 16384)
@@ -194,6 +194,7 @@ int sys_brk(unsigned long end_data_seg)
  * I just haven't get the stomach for it. I also don't fully
  * understand sessions/pgrp etc. Let somebody who does explain it.
  */
+/***/
 int sys_setpgid(int pid, int pgid)
 {
 	int i;
@@ -224,12 +225,12 @@ int sys_setpgid(int pid, int pgid)
 	}
 	return -ESRCH;
 }
-
+/***/
 int sys_getpgrp(void)
 {
 	return current->pgrp;
 }
-
+/***/
 int sys_setsid(void)
 {
 	if (current->leader && !suser())
@@ -241,7 +242,7 @@ int sys_setsid(void)
 	current->tty = -1;
 	return current->pgrp;
 }
-
+/***/
 int sys_uname(struct utsname * name)
 {
 	static struct utsname thisname = {

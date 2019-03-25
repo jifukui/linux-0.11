@@ -27,12 +27,15 @@ startup_32:
 	/*调用建立idt和gdt*/
 	call setup_idt
 	call setup_gdt
+	/*再次设置段寄存器*/
 	movl $0x10,%eax		# reload all the segment registers
 	mov %ax,%ds			# after changing gdt. CS was already
 	mov %ax,%es			# reloaded in 'setup_gdt'
 	mov %ax,%fs
 	mov %ax,%gs
+	/**设置堆寄存器的起始位置*/
 	lss _stack_start,%esp
+	/**判断内存0处与内存0x100000处的值是否一致如果一致表示A20没有开启进入死循环*/
 	xorl %eax,%eax
 1:	incl %eax		# check that A20 really IS enabled
 	movl %eax,0x000000	# loop forever if it isn't
@@ -44,6 +47,7 @@ startup_32:
  * 486 users probably want to set the NE (#5) bit also, so as to use
  * int 16 for math errors.
  */
+	/**检测数字协处理器是否存在*/
 	movl %cr0,%eax		# check math chip
 	andl $0x80000011,%eax	# Save PG,PE,ET
 /* "orl $0x10020,%eax" here for 486 might be good */
@@ -55,6 +59,7 @@ startup_32:
 /*
  * We depend on ET to be correct. This checks for 287/387.
  */
+ /**判断协处理器*/
 check_x87:
 	fninit
 	fstsw %ax

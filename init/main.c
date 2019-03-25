@@ -104,7 +104,7 @@ static long buffer_memory_end = 0;
 static long main_memory_start = 0;
 
 struct drive_info { char dummy[32]; } drive_info;
-
+/**系统主函数*/
 void main(void)		/* This really IS void, no error here. */
 {			/* The startup routine assumes (well, ...) this */
 /*
@@ -203,8 +203,9 @@ static char * envp[] = { "HOME=/usr/root", NULL };
 void init(void)
 {
 	int pid,i;
-
+	/***/
 	setup((void *) &drive_info);
+	/**以读写方式打开tty0*/
 	(void) open("/dev/tty0",O_RDWR,0);
 	(void) dup(0);
 	(void) dup(0);
