@@ -68,6 +68,7 @@ extern void hd_interrupt(void);
 extern void rd_load(void);
 
 /* This may be used only once, enforced by 'static int callable' */
+/***/
 int sys_setup(void * BIOS)
 {
 	static int callable = 1;
@@ -77,10 +78,13 @@ int sys_setup(void * BIOS)
 	struct buffer_head * bh;
 
 	if (!callable)
+	{
 		return -1;
+	}
 	callable = 0;
 #ifndef HD_TYPE
-	for (drive=0 ; drive<2 ; drive++) {
+	for (drive=0 ; drive<2 ; drive++) 
+	{
 		hd_info[drive].cyl = *(unsigned short *) BIOS;
 		hd_info[drive].head = *(unsigned char *) (2+BIOS);
 		hd_info[drive].wpcom = *(unsigned short *) (5+BIOS);
@@ -90,14 +94,18 @@ int sys_setup(void * BIOS)
 		BIOS += 16;
 	}
 	if (hd_info[1].cyl)
+	{
 		NR_HD=2;
+	}
 	else
+	{
 		NR_HD=1;
+	}
 #endif
-	for (i=0 ; i<NR_HD ; i++) {
+	for (i=0 ; i<NR_HD ; i++) 
+	{
 		hd[i*5].start_sect = 0;
-		hd[i*5].nr_sects = hd_info[i].head*
-				hd_info[i].sect*hd_info[i].cyl;
+		hd[i*5].nr_sects = hd_info[i].head*hd_info[i].sect*hd_info[i].cyl;
 	}
 
 	/*
@@ -123,36 +131,50 @@ int sys_setup(void * BIOS)
 	*/
 
 	if ((cmos_disks = CMOS_READ(0x12)) & 0xf0)
+	{
 		if (cmos_disks & 0x0f)
+		{
 			NR_HD = 2;
+		}
 		else
+		{
 			NR_HD = 1;
+		}
+	}
 	else
+	{
 		NR_HD = 0;
-	for (i = NR_HD ; i < 2 ; i++) {
+	}
+	for (i = NR_HD ; i < 2 ; i++) 
+	{
 		hd[i*5].start_sect = 0;
 		hd[i*5].nr_sects = 0;
 	}
-	for (drive=0 ; drive<NR_HD ; drive++) {
-		if (!(bh = bread(0x300 + drive*5,0))) {
+	for (drive=0 ; drive<NR_HD ; drive++) 
+	{
+		if (!(bh = bread(0x300 + drive*5,0))) 
+		{
 			printk("Unable to read partition table of drive %d\n\r",
 				drive);
 			panic("");
 		}
-		if (bh->b_data[510] != 0x55 || (unsigned char)
-		    bh->b_data[511] != 0xAA) {
+		if (bh->b_data[510] != 0x55 || (unsigned char)bh->b_data[511] != 0xAA) 
+		{
 			printk("Bad partition table on drive %d\n\r",drive);
 			panic("");
 		}
 		p = 0x1BE + (void *)bh->b_data;
-		for (i=1;i<5;i++,p++) {
+		for (i=1;i<5;i++,p++) 
+		{
 			hd[i+5*drive].start_sect = p->start_sect;
 			hd[i+5*drive].nr_sects = p->nr_sects;
 		}
 		brelse(bh);
 	}
 	if (NR_HD)
+	{
 		printk("Partition table%s ok.\n\r",(NR_HD>1)?"s":"");
+	}
 	rd_load();
 	mount_root();
 	return (0);
@@ -170,10 +192,14 @@ static int win_result(void)
 {
 	int i=inb_p(HD_STATUS);
 
-	if ((i & (BUSY_STAT | READY_STAT | WRERR_STAT | SEEK_STAT | ERR_STAT))
-		== (READY_STAT | SEEK_STAT))
+	if ((i & (BUSY_STAT | READY_STAT | WRERR_STAT | SEEK_STAT | ERR_STAT))== (READY_STAT | SEEK_STAT))
+	{
 		return(0); /* ok */
-	if (i&1) i=inb(HD_ERROR);
+	}
+	if (i&1)
+	{
+		i=inb(HD_ERROR);
+	}
 	return (1);
 }
 
@@ -184,9 +210,13 @@ static void hd_out(unsigned int drive,unsigned int nsect,unsigned int sect,
 	register int port asm("dx");
 
 	if (drive>1 || head>15)
+	{
 		panic("Trying to write bad sector");
+	}
 	if (!controller_ready())
+	{
 		panic("HD controller not ready");
+	}
 	do_hd = intr_addr;
 	outb_p(hd_info[drive].ctl,HD_CMD);
 	port=HD_DATA;
@@ -204,12 +234,18 @@ static int drive_busy(void)
 	unsigned int i;
 
 	for (i = 0; i < 10000; i++)
+	{
 		if (READY_STAT == (inb_p(HD_STATUS) & (BUSY_STAT|READY_STAT)))
+		{
 			break;
+		}
+	}
 	i = inb(HD_STATUS);
 	i &= BUSY_STAT | READY_STAT | SEEK_STAT;
 	if (i == READY_STAT | SEEK_STAT)
+	{
 		return(0);
+	}
 	printk("HD controller times out\n\r");
 	return(1);
 }
@@ -219,19 +255,25 @@ static void reset_controller(void)
 	int	i;
 
 	outb(4,HD_CMD);
-	for(i = 0; i < 100; i++) nop();
+	for(i = 0; i < 100; i++)
+	{
+		nop();
+	}
 	outb(hd_info[0].ctl & 0x0f ,HD_CMD);
 	if (drive_busy())
+	{
 		printk("HD-controller still busy\n\r");
+	}
 	if ((i = inb(HD_ERROR)) != 1)
+	{
 		printk("HD-controller reset failed: %02x\n\r",i);
+	}
 }
 
 static void reset_hd(int nr)
 {
 	reset_controller();
-	hd_out(nr,hd_info[nr].sect,hd_info[nr].sect,hd_info[nr].head-1,
-		hd_info[nr].cyl,WIN_SPECIFY,&recal_intr);
+	hd_out(nr,hd_info[nr].sect,hd_info[nr].sect,hd_info[nr].head-1,hd_info[nr].cyl,WIN_SPECIFY,&recal_intr);
 }
 
 void unexpected_hd_interrupt(void)
@@ -242,14 +284,19 @@ void unexpected_hd_interrupt(void)
 static void bad_rw_intr(void)
 {
 	if (++CURRENT->errors >= MAX_ERRORS)
+	{
 		end_request(0);
+	}
 	if (CURRENT->errors > MAX_ERRORS/2)
+	{
 		reset = 1;
+	}
 }
 
 static void read_intr(void)
 {
-	if (win_result()) {
+	if (win_result()) 
+	{
 		bad_rw_intr();
 		do_hd_request();
 		return;
@@ -258,7 +305,8 @@ static void read_intr(void)
 	CURRENT->errors = 0;
 	CURRENT->buffer += 512;
 	CURRENT->sector++;
-	if (--CURRENT->nr_sectors) {
+	if (--CURRENT->nr_sectors) 
+	{
 		do_hd = &read_intr;
 		return;
 	}
@@ -268,12 +316,14 @@ static void read_intr(void)
 
 static void write_intr(void)
 {
-	if (win_result()) {
+	if (win_result()) 
+	{
 		bad_rw_intr();
 		do_hd_request();
 		return;
 	}
-	if (--CURRENT->nr_sectors) {
+	if (--CURRENT->nr_sectors) 
+	{
 		CURRENT->sector++;
 		CURRENT->buffer += 512;
 		do_hd = &write_intr;
@@ -287,7 +337,9 @@ static void write_intr(void)
 static void recal_intr(void)
 {
 	if (win_result())
+	{
 		bad_rw_intr();
+	}
 	do_hd_request();
 }
 
@@ -301,7 +353,8 @@ void do_hd_request(void)
 	INIT_REQUEST;
 	dev = MINOR(CURRENT->dev);
 	block = CURRENT->sector;
-	if (dev >= 5*NR_HD || block+2 > hd[dev].nr_sects) {
+	if (dev >= 5*NR_HD || block+2 > hd[dev].nr_sects) 
+	{
 		end_request(0);
 		goto repeat;
 	}
@@ -313,31 +366,41 @@ void do_hd_request(void)
 		"r" (hd_info[dev].head));
 	sec++;
 	nsect = CURRENT->nr_sectors;
-	if (reset) {
+	if (reset) 
+	{
 		reset = 0;
 		recalibrate = 1;
 		reset_hd(CURRENT_DEV);
 		return;
 	}
-	if (recalibrate) {
+	if (recalibrate) 
+	{
 		recalibrate = 0;
-		hd_out(dev,hd_info[CURRENT_DEV].sect,0,0,0,
-			WIN_RESTORE,&recal_intr);
+		hd_out(dev,hd_info[CURRENT_DEV].sect,0,0,0,WIN_RESTORE,&recal_intr);
 		return;
 	}	
-	if (CURRENT->cmd == WRITE) {
+	if (CURRENT->cmd == WRITE) 
+	{
 		hd_out(dev,nsect,sec,head,cyl,WIN_WRITE,&write_intr);
 		for(i=0 ; i<3000 && !(r=inb_p(HD_STATUS)&DRQ_STAT) ; i++)
+		{
 			/* nothing */ ;
-		if (!r) {
+		}
+		if (!r) 
+		{
 			bad_rw_intr();
 			goto repeat;
 		}
 		port_write(HD_DATA,CURRENT->buffer,256);
-	} else if (CURRENT->cmd == READ) {
+	} 
+	else if (CURRENT->cmd == READ) 
+	{
 		hd_out(dev,nsect,sec,head,cyl,WIN_READ,&read_intr);
-	} else
+	} 
+	else
+	{
 		panic("unknown hd-command");
+	}
 }
 
 void hd_init(void)

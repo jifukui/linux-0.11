@@ -38,6 +38,7 @@ static int month[12] = {
 	DAY*(31+29+31+30+31+30+31+31+30+31+30)
 };
 
+/**根据传入的tm数据*/
 long kernel_mktime(struct tm * tm)
 {
 	long res;
@@ -49,7 +50,9 @@ long kernel_mktime(struct tm * tm)
 	res += month[tm->tm_mon];
 /* and (y+2) here. If it wasn't a leap-year, we have to adjust */
 	if (tm->tm_mon>1 && ((year+2)%4))
+	{
 		res -= DAY;
+	}
 	res += DAY*(tm->tm_mday-1);
 	res += HOUR*tm->tm_hour;
 	res += MINUTE*tm->tm_min;

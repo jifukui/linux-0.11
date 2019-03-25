@@ -60,6 +60,7 @@ static unsigned char mem_map [ PAGING_PAGES ] = {0,};
  * Get physical address of first (actually last :-) free page, and mark it
  * used. If no free pages left, return 0.
  */
+/**获取空闲的页*/
 unsigned long get_free_page(void)
 {
 register unsigned long __res asm("ax");
@@ -86,6 +87,7 @@ return __res;
  * Free a page of memory at physical address 'addr'. Used by
  * 'free_page_tables()'
  */
+/**释放页*/
 void free_page(unsigned long addr)
 {
 	if (addr < LOW_MEM) 
@@ -110,6 +112,7 @@ void free_page(unsigned long addr)
  * This function frees a continuos block of page tables, as needed
  * by 'exit()'. As does copy_page_tables(), this handles only 4Mb blocks.
  */
+/**释放页表*/
 int free_page_tables(unsigned long from,unsigned long size)
 {
 	unsigned long *pg_table;
@@ -155,6 +158,7 @@ int free_page_tables(unsigned long from,unsigned long size)
  * 1 Mb-range, so the pages can be shared with the kernel. Thus the
  * special case for nr=xxxx.
  */
+/**拷贝页表*/
 int copy_page_tables(unsigned long from,unsigned long to,long size)
 {
 	unsigned long * from_page_table;
@@ -164,27 +168,40 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
 	unsigned long nr;
 
 	if ((from&0x3fffff) || (to&0x3fffff))
+	{
 		panic("copy_page_tables called with wrong alignment");
+	}
 	from_dir = (unsigned long *) ((from>>20) & 0xffc); /* _pg_dir = 0 */
 	to_dir = (unsigned long *) ((to>>20) & 0xffc);
 	size = ((unsigned) (size+0x3fffff)) >> 22;
-	for( ; size-->0 ; from_dir++,to_dir++) {
+	for( ; size-->0 ; from_dir++,to_dir++) 
+	{
 		if (1 & *to_dir)
+		{
 			panic("copy_page_tables: already exist");
+		}
 		if (!(1 & *from_dir))
+		{
 			continue;
+		}
 		from_page_table = (unsigned long *) (0xfffff000 & *from_dir);
 		if (!(to_page_table = (unsigned long *) get_free_page()))
+		{
 			return -1;	/* Out of memory, see freeing */
+		}
 		*to_dir = ((unsigned long) to_page_table) | 7;
 		nr = (from==0)?0xA0:1024;
-		for ( ; nr-- > 0 ; from_page_table++,to_page_table++) {
+		for ( ; nr-- > 0 ; from_page_table++,to_page_table++) 
+		{
 			this_page = *from_page_table;
 			if (!(1 & this_page))
+			{
 				continue;
+			}
 			this_page &= ~2;
 			*to_page_table = this_page;
-			if (this_page > LOW_MEM) {
+			if (this_page > LOW_MEM) 
+			{
 				*from_page_table = this_page;
 				this_page -= LOW_MEM;
 				this_page >>= 12;
@@ -202,6 +219,7 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
  * out of memory (either when trying to access page-table or
  * page.)
  */
+/***/
 unsigned long put_page(unsigned long page,unsigned long address)
 {
 	unsigned long tmp, *page_table;
@@ -209,15 +227,24 @@ unsigned long put_page(unsigned long page,unsigned long address)
 /* NOTE !!! This uses the fact that _pg_dir=0 */
 
 	if (page < LOW_MEM || page >= HIGH_MEMORY)
+	{
 		printk("Trying to put page %p at %p\n",page,address);
+	}
 	if (mem_map[(page-LOW_MEM)>>12] != 1)
+	{
 		printk("mem_map disagrees with %p at %p\n",page,address);
+	}
 	page_table = (unsigned long *) ((address>>20) & 0xffc);
 	if ((*page_table)&1)
+	{
 		page_table = (unsigned long *) (0xfffff000 & *page_table);
-	else {
+	}
+	else 
+	{
 		if (!(tmp=get_free_page()))
+		{
 			return 0;
+		}
 		*page_table = tmp|7;
 		page_table = (unsigned long *) tmp;
 	}
@@ -231,15 +258,20 @@ void un_wp_page(unsigned long * table_entry)
 	unsigned long old_page,new_page;
 
 	old_page = 0xfffff000 & *table_entry;
-	if (old_page >= LOW_MEM && mem_map[MAP_NR(old_page)]==1) {
+	if (old_page >= LOW_MEM && mem_map[MAP_NR(old_page)]==1) 
+	{
 		*table_entry |= 2;
 		invalidate();
 		return;
 	}
 	if (!(new_page=get_free_page()))
+	{
 		oom();
+	}
 	if (old_page >= LOW_MEM)
+	{
 		mem_map[MAP_NR(old_page)]--;
+	}
 	*table_entry = new_page | 7;
 	invalidate();
 	copy_page(old_page,new_page);
@@ -265,25 +297,30 @@ void do_wp_page(unsigned long error_code,unsigned long address)
 		*((unsigned long *) ((address>>20) &0xffc)))));
 
 }
-
+/**写校验*/
 void write_verify(unsigned long address)
 {
 	unsigned long page;
 
 	if (!( (page = *((unsigned long *) ((address>>20) & 0xffc)) )&1))
+	{
 		return;
+	}
 	page &= 0xfffff000;
 	page += ((address>>10) & 0xffc);
 	if ((3 & *(unsigned long *) page) == 1)  /* non-writeable, present */
+	{
 		un_wp_page((unsigned long *) page);
+	}
 	return;
 }
-
+/***/
 void get_empty_page(unsigned long address)
 {
 	unsigned long tmp;
 
-	if (!(tmp=get_free_page()) || !put_page(tmp,address)) {
+	if (!(tmp=get_free_page()) || !put_page(tmp,address)) 
+	{
 		free_page(tmp);		/* 0 is ok - ignored */
 		oom();
 	}
@@ -311,26 +348,40 @@ static int try_to_share(unsigned long address, struct task_struct * p)
 /* is there a page-directory at from? */
 	from = *(unsigned long *) from_page;
 	if (!(from & 1))
+	{
 		return 0;
+	}
 	from &= 0xfffff000;
 	from_page = from + ((address>>10) & 0xffc);
 	phys_addr = *(unsigned long *) from_page;
 /* is the page clean and present? */
 	if ((phys_addr & 0x41) != 0x01)
+	{
 		return 0;
+	}
 	phys_addr &= 0xfffff000;
 	if (phys_addr >= HIGH_MEMORY || phys_addr < LOW_MEM)
+	{
 		return 0;
+	}
 	to = *(unsigned long *) to_page;
 	if (!(to & 1))
+	{
 		if (to = get_free_page())
+		{
 			*(unsigned long *) to_page = to | 7;
+		}
 		else
+		{
 			oom();
+		}
+	}
 	to &= 0xfffff000;
 	to_page = to + ((address>>10) & 0xffc);
 	if (1 & *(unsigned long *) to_page)
+	{
 		panic("try_to_share: to_page already exists");
+	}
 /* share them: write-protect */
 	*(unsigned long *) from_page &= ~2;
 	*(unsigned long *) to_page = *(unsigned long *) from_page;
@@ -349,27 +400,44 @@ static int try_to_share(unsigned long address, struct task_struct * p)
  * We first check if it is at all feasible by checking executable->i_count.
  * It should be >1 if there are other tasks sharing this inode.
  */
+
+/***/
 static int share_page(unsigned long address)
 {
 	struct task_struct ** p;
 
 	if (!current->executable)
+	{
 		return 0;
+	}
 	if (current->executable->i_count < 2)
+	{
 		return 0;
-	for (p = &LAST_TASK ; p > &FIRST_TASK ; --p) {
+	}
+	for (p = &LAST_TASK ; p > &FIRST_TASK ; --p) 
+	{
 		if (!*p)
+		{
 			continue;
+		}
 		if (current == *p)
+		{
 			continue;
+		}
 		if ((*p)->executable != current->executable)
+		{
 			continue;
+		}
 		if (try_to_share(address,*p))
+		{
 			return 1;
+		}
 	}
 	return 0;
 }
 
+
+/***/
 void do_no_page(unsigned long error_code,unsigned long address)
 {
 	int nr[4];
@@ -379,59 +447,92 @@ void do_no_page(unsigned long error_code,unsigned long address)
 
 	address &= 0xfffff000;
 	tmp = address - current->start_code;
-	if (!current->executable || tmp >= current->end_data) {
+	if (!current->executable || tmp >= current->end_data) 
+	{
 		get_empty_page(address);
 		return;
 	}
 	if (share_page(tmp))
+	{
 		return;
+	}
 	if (!(page = get_free_page()))
+	{
 		oom();
+	}
 /* remember that 1 block is used for header */
 	block = 1 + tmp/BLOCK_SIZE;
 	for (i=0 ; i<4 ; block++,i++)
+	{
 		nr[i] = bmap(current->executable,block);
+	}
 	bread_page(page,current->executable->i_dev,nr);
 	i = tmp + 4096 - current->end_data;
 	tmp = page + 4096;
-	while (i-- > 0) {
+	while (i-- > 0) 
+	{
 		tmp--;
 		*(char *)tmp = 0;
 	}
 	if (put_page(page,address))
+	{
 		return;
+	}
 	free_page(page);
 	oom();
 }
-
+/**
+ * 内存初始化
+ * 根据输入的主存起始位置和内存终止位置
+ * 设置HIGH_MEMORY的值为内存终止位置
+ * 根据定义的页的大小初始化内存映射的值为100
+*/
 void mem_init(long start_mem, long end_mem)
 {
 	int i;
 
 	HIGH_MEMORY = end_mem;
 	for (i=0 ; i<PAGING_PAGES ; i++)
+	{
 		mem_map[i] = USED;
+	}
+	/**设置i的值为起始内存以1M对齐的地址*/
 	i = MAP_NR(start_mem);
 	end_mem -= start_mem;
 	end_mem >>= 12;
+	/**设置从起始内存到终止内存区域的内存映射的值为0*/
 	while (end_mem-->0)
+	{
 		mem_map[i++]=0;
+	}
 }
 
+/**计算内存*/
 void calc_mem(void)
 {
 	int i,j,k,free=0;
 	long * pg_tbl;
 
 	for(i=0 ; i<PAGING_PAGES ; i++)
-		if (!mem_map[i]) free++;
+	{
+		if (!mem_map[i])
+		{
+			free++;
+		}
+	}
 	printk("%d pages free (of %d)\n\r",free,PAGING_PAGES);
-	for(i=2 ; i<1024 ; i++) {
-		if (1&pg_dir[i]) {
+	for(i=2 ; i<1024 ; i++) 
+	{
+		if (1&pg_dir[i]) 
+		{
 			pg_tbl=(long *) (0xfffff000 & pg_dir[i]);
 			for(j=k=0 ; j<1024 ; j++)
+			{
 				if (pg_tbl[j]&1)
+				{
 					k++;
+				}
+			}
 			printk("Pg-dir[%d] uses %d pages\n",i,k);
 		}
 	}

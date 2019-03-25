@@ -71,19 +71,34 @@ int copy_mem(int nr,struct task_struct * p)
  * information (task[nr]) and sets up the necessary registers. It
  * also copies the data segment in it's entirety.
  */
-/****/
-int copy_process(int nr,long ebp,long edi,long esi,long gs,long none,
-		long ebx,long ecx,long edx,
-		long fs,long es,long ds,
-		long eip,long cs,long eflags,long esp,long ss)
+/***拷贝进程函数*/
+int copy_process(int nr,
+				long ebp,
+				long edi,
+				long esi,
+				long gs,
+				long none,
+				long ebx,
+				long ecx,
+				long edx,
+				long fs,
+				long es,
+				long ds,
+				long eip,
+				long cs,
+				long eflags,
+				long esp,
+				long ss)
 {
 	struct task_struct *p;
 	int i;
 	struct file *f;
-
+	
 	p = (struct task_struct *) get_free_page();
 	if (!p)
+	{
 		return -EAGAIN;
+	}
 	task[nr] = p;
 	*p = *current;	/* NOTE! this doesn't copy the supervisor stack */
 	p->state = TASK_UNINTERRUPTIBLE;

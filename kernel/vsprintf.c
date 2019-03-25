@@ -17,7 +17,9 @@
 /*判断字符是否是数字*/
 #define is_digit(c)	((c) >= '0' && (c) <= '9')
 
-/*将数字字符转换为有符号的整形数值*/
+/**将数字字符转换为有符号的整形数值
+ * 取传入的字符串并对字符串进程处理直至第一个非数字的值，如果第一个值为非数字值直接返回0
+*/
 static int skip_atoi(const char **s)
 {
 	int i=0;
@@ -42,55 +44,121 @@ int __res; \
 __asm__("divl %4":"=a" (n),"=d" (__res):"0" (n),"1" (0),"r" (base)); \
 __res; })
 
-static char * number(char * str, int num, int base, int size, int precision
-	,int type)
+
+/**
+ * str：数字转换为字符串
+ * num：数值
+ * base：进制
+ * size：长度
+ * precision：精度
+ * type:类型
+*/
+static char * number(char * str, int num, int base, int size, int precision,int type)
 {
 	char c,sign,tmp[36];
 	const char *digits="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	int i;
-
-	if (type&SMALL) digits="0123456789abcdefghijklmnopqrstuvwxyz";
-	if (type&LEFT) type &= ~ZEROPAD;
+	/**小写*/
+	if (type&SMALL)
+	{
+		digits="0123456789abcdefghijklmnopqrstuvwxyz";
+	}
+	/**左对齐*/
+	if (type&LEFT)
+	{
+		type &= ~ZEROPAD;
+	}
+	/***/
 	if (base<2 || base>36)
+	{
 		return 0;
+	}
+	/**0填充处理*/
 	c = (type & ZEROPAD) ? '0' : ' ' ;
-	if (type&SIGN && num<0) {
+	/**带符号且数据小于0*/
+	if (type&SIGN && num<0) 
+	{
 		sign='-';
 		num = -num;
-	} else
+	} 
+	else
+	{
 		sign=(type&PLUS) ? '+' : ((type&SPACE) ? ' ' : 0);
-	if (sign) size--;
+	}
+	if (sign)
+	{
+		size--;
+	}
 	if (type&SPECIAL)
-		if (base==16) size -= 2;
-		else if (base==8) size--;
+	{
+		if (base==16)
+		{
+			size -= 2;
+		}
+		else if (base==8)
+		{
+			size--;
+		}
+	}
 	i=0;
 	if (num==0)
+	{
 		tmp[i++]='0';
-	else while (num!=0)
-		tmp[i++]=digits[do_div(num,base)];
-	if (i>precision) precision=i;
+	}
+	else
+	{
+		while (num!=0)
+		{
+			tmp[i++]=digits[do_div(num,base)];
+		}
+	}
+	if (i>precision)
+	{
+		precision=i;
+	}
 	size -= precision;
 	if (!(type&(ZEROPAD+LEFT)))
+	{
 		while(size-->0)
+		{
 			*str++ = ' ';
+		}
+	}
 	if (sign)
+	{
 		*str++ = sign;
+	}
 	if (type&SPECIAL)
+	{
 		if (base==8)
+		{
 			*str++ = '0';
-		else if (base==16) {
+		}
+		else if (base==16) 
+		{
 			*str++ = '0';
 			*str++ = digits[33];
 		}
+	}
 	if (!(type&LEFT))
+	{
 		while(size-->0)
+		{
 			*str++ = c;
+		}
+	}
 	while(i<precision--)
+	{
 		*str++ = '0';
+	}
 	while(i-->0)
+	{
 		*str++ = tmp[i];
+	}
 	while(size-->0)
+	{
 		*str++ = ' ';
+	}
 	return str;
 }
 /***/

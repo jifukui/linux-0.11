@@ -23,7 +23,10 @@
 #define _S(nr) (1<<((nr)-1))
 #define _BLOCKABLE (~(_S(SIGKILL) | _S(SIGSTOP)))
 
-/***/
+/**显示传入进程指针的状态
+ * nr:
+ * p：进程
+*/
 void show_task(int nr,struct task_struct * p)
 {
 	int i,j = 4096-sizeof(struct task_struct);
@@ -37,6 +40,8 @@ void show_task(int nr,struct task_struct * p)
 	printk("%d (of %d) chars free in kernel stack\n\r",i,j);
 }
 
+
+/**显示所有进程的状态*/
 void show_stat(void)
 {
 	int i;
@@ -81,6 +86,7 @@ struct {
  *  'math_state_restore()' saves the current math information in the
  * old math state array, and gets the new ones from the current task
  */
+/***/
 void math_state_restore()
 {
 	if (last_task_used_math == current)
@@ -114,6 +120,7 @@ void math_state_restore()
  * tasks can run. It can not be killed, and it cannot sleep. The 'state'
  * information in task[0] is never used.
  */
+/**进程调度函数*/
 void schedule(void)
 {
 	int i,next,c;
@@ -171,6 +178,7 @@ void schedule(void)
 	switch_to(next);
 }
 
+/***/
 int sys_pause(void)
 {
 	current->state = TASK_INTERRUPTIBLE;
@@ -178,6 +186,7 @@ int sys_pause(void)
 	return 0;
 }
 
+/***/
 void sleep_on(struct task_struct **p)
 {
 	struct task_struct *tmp;
@@ -200,6 +209,8 @@ void sleep_on(struct task_struct **p)
 	}
 }
 
+
+/***/
 void interruptible_sleep_on(struct task_struct **p)
 {
 	struct task_struct *tmp;
@@ -246,7 +257,7 @@ static struct task_struct * wait_motor[4] = {NULL,NULL,NULL,NULL};
 static int  mon_timer[4]={0,0,0,0};
 static int moff_timer[4]={0,0,0,0};
 unsigned char current_DOR = 0x0C;
-
+/***/
 int ticks_to_floppy_on(unsigned int nr)
 {
 	extern unsigned char selected;
@@ -280,7 +291,7 @@ int ticks_to_floppy_on(unsigned int nr)
 	sti();
 	return mon_timer[nr];
 }
-
+/***/
 void floppy_on(unsigned int nr)
 {
 	cli();
@@ -290,12 +301,12 @@ void floppy_on(unsigned int nr)
 	}
 	sti();
 }
-
+/***/
 void floppy_off(unsigned int nr)
 {
 	moff_timer[nr]=3*HZ;
 }
-
+/***/
 void do_floppy_timer(void)
 {
 	int i;
@@ -333,7 +344,7 @@ static struct timer_list {
 	void (*fn)();
 	struct timer_list * next;
 } timer_list[TIME_REQUESTS], * next_timer = NULL;
-
+/**添加计时器*/
 void add_timer(long jiffies, void (*fn)(void))
 {
 	struct timer_list * p;
@@ -378,7 +389,7 @@ void add_timer(long jiffies, void (*fn)(void))
 	}
 	sti();
 }
-
+/***/
 void do_timer(long cpl)
 {
 	extern int beepcount;
@@ -430,6 +441,7 @@ void do_timer(long cpl)
 	schedule();
 }
 
+/**系统警报*/
 int sys_alarm(long seconds)
 {
 	int old = current->alarm;
@@ -466,12 +478,12 @@ int sys_getgid(void)
 {
 	return current->gid;
 }
-/***/
+/**获取当前有效用户ID*/
 int sys_getegid(void)
 {
 	return current->egid;
 }
-/***/
+/**获取当前进程的优先级*/
 int sys_nice(long increment)
 {
 	if (current->priority-increment>0)
@@ -481,6 +493,8 @@ int sys_nice(long increment)
 	return 0;
 }
 
+
+/***/
 void sched_init(void)
 {
 	int i;

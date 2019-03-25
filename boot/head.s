@@ -13,19 +13,23 @@
  */
 .text
 .globl _idt,_gdt,_pg_dir,_tmp_floppy_area
+!页目录存放位置
 _pg_dir:
 startup_32:
+	!指向数据段，在段模式下CS为代码段，DS为数据段,SS为栈段，ED,FS,GS为附加段指针
 	movl $0x10,%eax
 	mov %ax,%ds
 	mov %ax,%es
 	mov %ax,%fs
 	mov %ax,%gs
+	!设置堆栈指针的位置
 	lss _stack_start,%esp
+	!调用建立idt和gdt
 	call setup_idt
 	call setup_gdt
 	movl $0x10,%eax		# reload all the segment registers
-	mov %ax,%ds		# after changing gdt. CS was already
-	mov %ax,%es		# reloaded in 'setup_gdt'
+	mov %ax,%ds			# after changing gdt. CS was already
+	mov %ax,%es			# reloaded in 'setup_gdt'
 	mov %ax,%fs
 	mov %ax,%gs
 	lss _stack_start,%esp
@@ -75,8 +79,11 @@ check_x87:
  *  sure everything is ok. This routine will be over-
  *  written by the page tables.
  */
+ /**设置中断描述符表*/
 setup_idt:
+	!将ignore_int的地址装入dx寄存器中
 	lea ignore_int,%edx
+	!设置ax寄存器的值
 	movl $0x00080000,%eax
 	movw %dx,%ax		/* selector = 0x0008 = cs */
 	movw $0x8E00,%dx	/* interrupt gate - dpl=0, present */

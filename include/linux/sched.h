@@ -74,45 +74,46 @@ struct tss_struct {
 	long	trace_bitmap;	/* bits: trace 0, bitmap 16-31 */
 	struct i387_struct i387;
 };
-/**任务结构体
- * state
- * counter
- * priority
- * signal
- * sigaction
- * blocked
- * exit_code
- * start_code
- * end_code
- * brk
- * start_stack
- * pid
- * father
- * pgrp
- * session
- * leader
- * uid
- * euid
- * suid
- * gid
- * egid
- * sgid
- * alarm
- * utime
- * stiem
- * cutime
- * cstime
- * start_time
- * used_math
- * tty
- * umask
- * pwd
- * root
- * executable
- * close_on_exec
- * filp
- * ldt
- * tss
+/**任务结构体，也就是进程描述符
+ * state：进程状态
+ * counter：任务运行时间计数，时间片
+ * priority：运行优先数，数值越大运行级别越高
+ * signal：信号
+ * sigaction：信号执行属性结构，对应信号将要执行的操作和标志信息
+ * blocked：进程信号屏蔽码
+ * exit_code：进程退出值
+ * start_code：代码段起始地址
+ * end_code：代码段长度
+ * end_data:代码长度+数据长度 的字节数
+ * brk：总长度
+ * start_stack：堆栈起始地址
+ * pid：进程id号
+ * father：父进程号
+ * pgrp：进程组ID
+ * session：会话号
+ * leader：会话首领
+ * uid：用户ID
+ * euid：有效用户ID
+ * suid：保存的用户组ID
+ * gid：组ID
+ * egid：有效组ID
+ * sgid：保存的用户组ID
+ * alarm：报警滴答计时器值
+ * utime：用户态运行时间（滴答计时）
+ * stiem：系统态运行时间（滴答计时）
+ * cutime：用户态运行时间
+ * cstime：系统态运行时间
+ * start_time：进程开始运行时间
+ * used_math：是否使用协处理器
+ * tty：进程使用的tty终端的子设备
+ * umask：文件创建属性屏蔽位
+ * pwd：当前工作目录I节点结构指针
+ * root：根目录i节点结构指针
+ * executable：执行文件i结构结构指针
+ * close_on_exec：执行时关闭文件句柄位图
+ * filp：文件结构指针表，最多32
+ * ldt：局部描述符表，0空，1代码段，2数据和堆栈段
+ * tss：进程的任务状态信息结构
 */
 struct task_struct {
 /* these are hardcoded - don't touch */

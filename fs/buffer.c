@@ -35,11 +35,13 @@ int NR_BUFFERS = 0;
 
 static inline void wait_on_buffer(struct buffer_head * bh)
 {
+	/**关闭中断*/
 	cli();
 	while (bh->b_lock)
 	{
 		sleep_on(&bh->b_wait);
 	}
+	/**打开中断*/
 	sti();
 }
 
@@ -157,13 +159,18 @@ void check_disk_change(int dev)
 #define _hashfn(dev,block) (((unsigned)(dev^block))%NR_HASH)
 #define hash(dev,block) hash_table[_hashfn(dev,block)]
 
+/**从队列中删除数据*/
 static inline void remove_from_queues(struct buffer_head * bh)
 {
 /* remove from hash-queue */
+	/**判断此缓冲区头结构中的下一个hash数据是否存在
+	 * 设置指向的数据的上一个hash节点为此的上一个hash节点
+	*/
 	if (bh->b_next)
 	{
 		bh->b_next->b_prev = bh->b_prev;
 	}
+	/**如果此节点的上一个hash节点存在*/
 	if (bh->b_prev)
 	{
 		bh->b_prev->b_next = bh->b_next;

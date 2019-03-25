@@ -66,6 +66,7 @@ extern long startup_time;
  * bios-listing reading. Urghh.
  */
 
+/**读取CMOS数据值*/
 #define CMOS_READ(addr) ({ \
 outb_p(0x80|addr,0x70); \
 inb_p(0x71); \
@@ -73,6 +74,9 @@ inb_p(0x71); \
 
 #define BCD_TO_BIN(val) ((val)=((val)&15) + ((val)>>4)*10)
 
+/**
+ * 时间初始化
+*/
 static void time_init(void)
 {
 	struct tm time;
@@ -109,12 +113,15 @@ void main(void)		/* This really IS void, no error here. */
  */
  	ROOT_DEV = ORIG_ROOT_DEV;
  	drive_info = DRIVE_INFO;
+	/**计算内存空间打下*/
 	memory_end = (1<<20) + (EXT_MEM_K<<10);
 	memory_end &= 0xfffff000;
+	/**根据内存空间的大小设置内存空间的大小*/
 	if (memory_end > 16*1024*1024)
 	{
 		memory_end = 16*1024*1024;
 	}
+	/***/
 	if (memory_end > 12*1024*1024) 
 	{
 		buffer_memory_end = 4*1024*1024;
@@ -127,23 +134,40 @@ void main(void)		/* This really IS void, no error here. */
 	{
 		buffer_memory_end = 1*1024*1024;
 	}
+	/**设置主存的起始位置*/
 	main_memory_start = buffer_memory_end;
+	/**如果定义RAMDISK则修改主存起始位置*/
 #ifdef RAMDISK
 	main_memory_start += rd_init(main_memory_start, RAMDISK*1024);
 #endif
+	/**内存初始化，将起始内存至终止内存的内存映射值设置为0*/
 	mem_init(main_memory_start,memory_end);
+	/**陷阱初始化*/
 	trap_init();
+	/**块设备初始化*/
 	blk_dev_init();
+	/**字符设备初始化*/
 	chr_dev_init();
+	/**tty设备初始化*/
 	tty_init();
+	/**时间初始化*/
 	time_init();
+	/***/
 	sched_init();
+	/***/
 	buffer_init(buffer_memory_end);
+	/**硬盘初始化*/
 	hd_init();
+	/**软盘初始化*/
 	floppy_init();
+	/**打开中断*/
 	sti();
+	/**进入用户模式*/
 	move_to_user_mode();
-	if (!fork()) {		/* we count on this going ok */
+	/**创建init进程*/
+	if (!fork()) 
+	{		
+		/* we count on this going ok */
 		init();
 	}
 /*

@@ -65,19 +65,20 @@ __asm__("incl %0\n\tandl $4095,%0"::"m" (head))
 
 typedef char buffer_block[BLOCK_SIZE];
 
+/**缓冲头结构体*/
 struct buffer_head {
-	char * b_data;			/* pointer to data block (1024 bytes) */
-	unsigned long b_blocknr;	/* block number */
-	unsigned short b_dev;		/* device (0 = free) */
-	unsigned char b_uptodate;
-	unsigned char b_dirt;		/* 0-clean,1-dirty */
-	unsigned char b_count;		/* users using this block */
-	unsigned char b_lock;		/* 0 - ok, 1 -locked */
-	struct task_struct * b_wait;
-	struct buffer_head * b_prev;
-	struct buffer_head * b_next;
-	struct buffer_head * b_prev_free;
-	struct buffer_head * b_next_free;
+	char * b_data;						/* pointer to data block (1024 bytes) 指向缓冲块数据的指针*/
+	unsigned long b_blocknr;			/* block number  块号*/
+	unsigned short b_dev;				/* device (0 = free) 设备号*/
+	unsigned char b_uptodate;			/* 更新标志*/
+	unsigned char b_dirt;				/* 0-clean,1-dirty 是否修改过*/
+	unsigned char b_count;				/* users using this block 使用此文件的用户数*/
+	unsigned char b_lock;				/* 0 - ok, 1 -locked 缓冲区是否锁定*/
+	struct task_struct * b_wait;		/* 指向等待该缓冲区解锁的任务*/
+	struct buffer_head * b_prev;		/* hash队列的上一块*/
+	struct buffer_head * b_next;		/* hash队里的下一块*/
+	struct buffer_head * b_prev_free;	/* 空闲表的上一块*/
+	struct buffer_head * b_next_free;	/* 空闲表的下一块*/
 };
 
 struct d_inode {
@@ -121,26 +122,27 @@ struct file {
 	off_t f_pos;
 };
 
+/**超级块结构*/
 struct super_block {
-	unsigned short s_ninodes;
-	unsigned short s_nzones;
-	unsigned short s_imap_blocks;
-	unsigned short s_zmap_blocks;
-	unsigned short s_firstdatazone;
-	unsigned short s_log_zone_size;
-	unsigned long s_max_size;
-	unsigned short s_magic;
+	unsigned short s_ninodes;				/**/
+	unsigned short s_nzones;				/**/
+	unsigned short s_imap_blocks;			/**/
+	unsigned short s_zmap_blocks;			/**/
+	unsigned short s_firstdatazone;			/**/
+	unsigned short s_log_zone_size;			/**/
+	unsigned long s_max_size;				/**/
+	unsigned short s_magic;					/**/
 /* These are only in memory */
-	struct buffer_head * s_imap[8];
-	struct buffer_head * s_zmap[8];
-	unsigned short s_dev;
-	struct m_inode * s_isup;
-	struct m_inode * s_imount;
-	unsigned long s_time;
-	struct task_struct * s_wait;
-	unsigned char s_lock;
-	unsigned char s_rd_only;
-	unsigned char s_dirt;
+	struct buffer_head * s_imap[8];			/**/
+	struct buffer_head * s_zmap[8];			/**/
+	unsigned short s_dev;					/**/
+	struct m_inode * s_isup;				/**/
+	struct m_inode * s_imount;				/**/
+	unsigned long s_time;					/**/
+	struct task_struct * s_wait;			/**/
+	unsigned char s_lock;					/**/
+	unsigned char s_rd_only;				/**/
+	unsigned char s_dirt;					/**/
 };
 
 struct d_super_block {
@@ -154,6 +156,7 @@ struct d_super_block {
 	unsigned short s_magic;
 };
 
+/**目录*/
 struct dir_entry {
 	unsigned short inode;
 	char name[NAME_LEN];

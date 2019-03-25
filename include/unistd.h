@@ -130,6 +130,8 @@
 #define __NR_setreuid	70
 #define __NR_setregid	71
 
+
+/**定义系统调用0*/
 #define _syscall0(type,name) \
 type name(void) \
 { \
@@ -143,6 +145,8 @@ errno = -__res; \
 return -1; \
 }
 
+
+/**定义系统调用1*/
 #define _syscall1(type,name,atype,a) \
 type name(atype a) \
 { \
@@ -156,6 +160,7 @@ errno = -__res; \
 return -1; \
 }
 
+/**定义系统调用2*/
 #define _syscall2(type,name,atype,a,btype,b) \
 type name(atype a,btype b) \
 { \
@@ -169,6 +174,8 @@ errno = -__res; \
 return -1; \
 }
 
+
+/**定义系统调用3*/
 #define _syscall3(type,name,atype,a,btype,b,ctype,c) \
 type name(atype a,btype b,ctype c) \
 { \

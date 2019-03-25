@@ -63,10 +63,10 @@ start:
 	mov	[12],cx
 
 ! Get hd0 data
-
+!将hd0参数表的值复制到0x80处
 	mov	ax,#0x0000
 	mov	ds,ax
-	lds	si,[4*0x41]
+	lds	si,[4*0x41] !获取hd0参数表的地址
 	mov	ax,#INITSEG
 	mov	es,ax
 	mov	di,#0x0080
@@ -75,10 +75,10 @@ start:
 	movsb
 
 ! Get hd1 data
-
+!将hd1参数表的值复制到0x90处
 	mov	ax,#0x0000
 	mov	ds,ax
-	lds	si,[4*0x46]
+	lds	si,[4*0x46]	!获取hd1参数表的地址
 	mov	ax,#INITSEG
 	mov	es,ax
 	mov	di,#0x0090
@@ -90,10 +90,11 @@ start:
 !检测硬盘2是否在线
 	mov	ax,#0x01500
 	mov	dl,#0x81
-	int	0x13
+	int	0x13      !调用此中断获取硬盘是否在线存储在ah中
 	jc	no_disk1
-	cmp	ah,#3
-	je	is_disk1
+	cmp	ah,#3	  !比较ah的值是否为3（是硬盘）
+	je	is_disk1  !是硬盘的处理
+!对于没有hd1的处理为将对应的参数表的值清0
 no_disk1:
 	mov	ax,#INITSEG
 	mov	es,ax
@@ -102,8 +103,9 @@ no_disk1:
 	mov	ax,#0x00
 	rep
 	stosb
-is_disk1:
 
+!是硬盘的处理函数
+is_disk1:
 ! now we want to move to protected mode ...
 
 	cli			! no interrupts allowed !
@@ -127,7 +129,7 @@ do_move:
 	jmp	do_move
 
 ! then we load the segment descriptors
-
+!数据传输完成
 end_move:
 	mov	ax,#SETUPSEG	! right, forgot this at first. didn't work :-)
 	mov	ds,ax
@@ -151,7 +153,7 @@ end_move:
 ! rectify it afterwards. Thus the bios puts interrupts at 0x08-0x0f,
 ! which is used for the internal hardware interrupts as well. We just
 ! have to reprogram the 8259's, and it isn't fun.
-
+！对中断处理程序进程修改
 	mov	al,#0x11		! initialization sequence
 	out	#0x20,al		! send it to 8259A-1
 	.word	0x00eb,0x00eb		! jmp $+2, jmp $+2
@@ -188,7 +190,7 @@ end_move:
 ! things as simple as possible, we do no register set-up or anything,
 ! we let the gnu-compiled 32-bit programs do that. We just jump to
 ! absolute address 0x00000, in 32-bit protected mode.
-
+!设置保护模式
 	mov	ax,#0x0001	! protected mode (PE) bit
 	lmsw	ax		! This is it!
 	jmpi	0,8		! jmp offset 0 of segment 8 (cs)
@@ -202,15 +204,15 @@ empty_8042:
 	test	al,#2		! is input buffer full?
 	jnz	empty_8042	! yes - loop
 	ret
-
+!设置全局段描述表，这里1word=2byte
 gdt:
-	.word	0,0,0,0		! dummy
-
+	.word	0,0,0,0		! dummy 第一个全局段描述表不用设置为空
+!在内核中设置的偏移位置为0x8为代码段
 	.word	0x07FF		! 8Mb - limit=2047 (2048*4096=8Mb)
 	.word	0x0000		! base address=0
 	.word	0x9A00		! code read/exec
 	.word	0x00C0		! granularity=4096, 386
-
+!在内核中设置的偏移位置为0x10为数据段
 	.word	0x07FF		! 8Mb - limit=2047 (2048*4096=8Mb)
 	.word	0x0000		! base address=0
 	.word	0x9200		! data read/write

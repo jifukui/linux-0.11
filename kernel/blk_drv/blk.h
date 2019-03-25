@@ -59,7 +59,7 @@ extern struct task_struct * wait_for_request;
  */
 
 #if (MAJOR_NR == 1)
-/* ram disk */
+/* ram disk  ram盘 */
 #define DEVICE_NAME "ramdisk"
 #define DEVICE_REQUEST do_rd_request
 #define DEVICE_NR(device) ((device) & 7)
@@ -67,7 +67,7 @@ extern struct task_struct * wait_for_request;
 #define DEVICE_OFF(device)
 
 #elif (MAJOR_NR == 2)
-/* floppy */
+/* floppy 软盘*/
 #define DEVICE_NAME "floppy"
 #define DEVICE_INTR do_floppy
 #define DEVICE_REQUEST do_fd_request
@@ -76,7 +76,7 @@ extern struct task_struct * wait_for_request;
 #define DEVICE_OFF(device) floppy_off(DEVICE_NR(device))
 
 #elif (MAJOR_NR == 3)
-/* harddisk */
+/* harddisk 硬盘*/
 #define DEVICE_NAME "harddisk"
 #define DEVICE_INTR do_hd
 #define DEVICE_REQUEST do_hd_request
