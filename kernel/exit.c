@@ -279,7 +279,9 @@ repeat:
 	/**从最后一个进程到第2个进程*/
 	for(p = &LAST_TASK ; p > &FIRST_TASK ; --p) 
 	{
-		/**对于进程为空或者进程为当前进程的跳过*/
+		/**对于进程为空或者进程为当前进程的跳过，即下面的两个if语句用于
+		 * 查找进程的父进程为当前进程
+		*/
 		if (!*p || *p == current)
 		{
 			continue;
@@ -291,6 +293,7 @@ repeat:
 		}
 		/**对于进程ID大于0
 		 * 如果进程的进程ID不等于传入的进程ID跳过
+		 * 即当前进程时此进程的另外的子进程
 		*/
 		if (pid>0) 
 		{
@@ -299,7 +302,9 @@ repeat:
 				continue;
 			}
 		} 
-		/**对于进程ID为0且进程的组ID不为当前进程的组ID跳过*/
+		/**对于进程ID为0且进程的组ID不为当前进程的组ID跳过
+		 * 即进程组号不等于当前的进程组号
+		*/
 		else if (!pid) 
 		{
 			if ((*p)->pgrp != current->pgrp)
@@ -327,7 +332,9 @@ repeat:
 				}
 				put_fs_long(0x7f,stat_addr);
 				return (*p)->pid;
-			/**对于进程状态为僵死状态*/
+			/**对于进程状态为僵死状态
+			 * 设置传入进程的
+			*/
 			case TASK_ZOMBIE:
 				current->cutime += (*p)->utime;
 				current->cstime += (*p)->stime;
