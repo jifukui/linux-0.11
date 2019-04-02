@@ -127,16 +127,22 @@ void schedule(void)
 	struct task_struct ** p;
 
 /* check alarm, wake up any interruptible tasks that have got a signal */
-
+	/**处理第2个任务到最后个任务*/
 	for(p = &LAST_TASK ; p > &FIRST_TASK ; --p)
 	{
 		if (*p) 
 		{
+			/**任务的计时器存在且计时器的值小于jiffies的值
+			 * 设置任务的信号为警告信号，同时设置警告时间为0
+			*/
 			if ((*p)->alarm && (*p)->alarm < jiffies) 
 			{
 					(*p)->signal |= (1<<(SIGALRM-1));
 					(*p)->alarm = 0;
 			}
+			/**任务的信号的值与上信号屏蔽值与上不可屏蔽的值且任务的状态是可中断状态的处理
+			 * 设置任务的状态为可执行状态
+			*/
 			if (((*p)->signal & ~(_BLOCKABLE & (*p)->blocked)) &&(*p)->state==TASK_INTERRUPTIBLE)
 			{
 				(*p)->state=TASK_RUNNING;
@@ -154,19 +160,31 @@ void schedule(void)
 		p = &task[NR_TASKS];
 		while (--i) 
 		{
+			/**对于不存在的任务跳过*/
 			if (!*--p)
 			{
 				continue;
 			}
+			/**对于任务的状态为运行状态且任务的时间片大于c
+			 * 设置c的值为此进程时间片的值
+			 * 设置下一个为i的值
+			 * 这样应该会得到时间片最大的进程
+			*/
 			if ((*p)->state == TASK_RUNNING && (*p)->counter > c)
 			{
-				c = (*p)->counter, next = i;
+				c = (*p)->counter;
+				next = i;
 			}
 		}
+		/***/
 		if (c)
 		{
 			break;
 		}
+		/**检测第2个任务到最后一个任务
+		 * 对于存在的任务计算时间片
+		 * 时间片的值为当前的时间片左移1位加上优先级的值
+		*/
 		for(p = &LAST_TASK ; p > &FIRST_TASK ; --p)
 		{
 			if (*p)
@@ -175,10 +193,14 @@ void schedule(void)
 			}
 		}
 	}
+	/**调用进程*/
 	switch_to(next);
 }
 
-/***/
+/**系统暂停函数
+ * 设置当前进程的状态为可中断状态，即等待收到一个具体的函数再进行执行
+ * 并重新调用进程处理函数
+*/
 int sys_pause(void)
 {
 	current->state = TASK_INTERRUPTIBLE;
@@ -186,23 +208,27 @@ int sys_pause(void)
 	return 0;
 }
 
-/***/
+/**睡眠函数*/
 void sleep_on(struct task_struct **p)
 {
 	struct task_struct *tmp;
-
+	/**任务处理函数不存在的处理*/
 	if (!p)
 	{
 		return;
 	}
+	/**当前的任务为init任务的处理，内核输出init程序处于休眠状态*/
 	if (current == &(init_task.task))
 	{
 		panic("task[0] trying to sleep");
 	}
 	tmp = *p;
 	*p = current;
+	/**设置当前任务的状态为不可中断状态，及不进行信号处理*/
 	current->state = TASK_UNINTERRUPTIBLE;
+	/**进程调度函数*/
 	schedule();
+	/**如果任务存在设置任务的状态为0*/
 	if (tmp)
 	{
 		tmp->state=0;
@@ -238,7 +264,9 @@ repeat:	current->state = TASK_INTERRUPTIBLE;
 		tmp->state=0;
 	}
 }
-/***唤醒程序*/
+/***唤醒程序
+ * 对于存在的任务设置任务的状态为0
+*/
 void wake_up(struct task_struct **p)
 {
 	if (p && *p) 
@@ -483,7 +511,7 @@ int sys_getegid(void)
 {
 	return current->egid;
 }
-/**获取当前进程的优先级*/
+/**设置当前进程的优先级*/
 int sys_nice(long increment)
 {
 	if (current->priority-increment>0)
@@ -494,7 +522,7 @@ int sys_nice(long increment)
 }
 
 
-/***/
+/**调度处理函数初始化*/
 void sched_init(void)
 {
 	int i;
@@ -504,9 +532,12 @@ void sched_init(void)
 	{
 		panic("Struct sigaction MUST be 16 bytes");
 	}
+	/**设置tss描述*/
 	set_tss_desc(gdt+FIRST_TSS_ENTRY,&(init_task.task.tss));
+	/**设置ldt描述*/
 	set_ldt_desc(gdt+FIRST_LDT_ENTRY,&(init_task.task.ldt));
 	p = gdt+2+FIRST_TSS_ENTRY;
+	/**初始化认为表*/
 	for(i=1;i<NR_TASKS;i++) 
 	{
 		task[i] = NULL;

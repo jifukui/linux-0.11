@@ -20,7 +20,7 @@
 extern void write_verify(unsigned long address);
 
 long last_pid=0;
-/***/
+/**判断传入的地址是否正确*/
 void verify_area(void * addr,int size)
 {
 	unsigned long start;
@@ -166,16 +166,18 @@ int copy_process(int nr,
 	p->state = TASK_RUNNING;	/* do this last, just in case */
 	return last_pid;
 }
-/**寻找空的进程*/
+/**寻找空的进程，寻找可用的进程*/
 int find_empty_process(void)
 {
 	int i;
 
 	repeat:
+		/**如果没有进程进行初始化最后使用进程*/
 		if ((++last_pid)<0) 
 		{
 			last_pid=1;
 		}
+		/**判断此进程的进程ID是否被使用*/
 		for(i=0 ; i<NR_TASKS ; i++)
 		{
 			if (task[i] && task[i]->pid == last_pid) 
@@ -183,12 +185,13 @@ int find_empty_process(void)
 				goto repeat;
 			}
 		}
-	for(i=1 ; i<NR_TASKS ; i++)
-	{
-		if (!task[i])
+		/**返回任务在任务数组的位置*/
+		for(i=1 ; i<NR_TASKS ; i++)
 		{
-			return i;
+			if (!task[i])
+			{
+				return i;
+			}
 		}
-	}
-	return -EAGAIN;
+		return -EAGAIN;
 }

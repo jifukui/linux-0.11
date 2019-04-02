@@ -48,6 +48,7 @@ int sys_prof()
 	return -ENOSYS;
 }
 
+/**设置*/
 int sys_setregid(int rgid, int egid)
 {
 	if (rgid>0) 

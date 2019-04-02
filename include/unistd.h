@@ -131,7 +131,7 @@
 #define __NR_setregid	71
 
 
-/**定义系统调用0*/
+/**定义系统调用0，没有参数只有函数类型和函数名称*/
 #define _syscall0(type,name) \
 type name(void) \
 { \
@@ -146,7 +146,7 @@ return -1; \
 }
 
 
-/**定义系统调用1*/
+/**定义系统调用1，包含一个参数*/
 #define _syscall1(type,name,atype,a) \
 type name(atype a) \
 { \

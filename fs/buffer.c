@@ -451,7 +451,7 @@ struct buffer_head * breada(int dev,int first, ...)
 	brelse(bh);
 	return (NULL);
 }
-
+/**高速缓冲区初始化*/
 void buffer_init(long buffer_end)
 {
 	struct buffer_head * h = start_buffer;

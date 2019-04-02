@@ -36,10 +36,10 @@ startup_32:
 	/**设置堆寄存器的起始位置*/
 	lss _stack_start,%esp
 	/**判断内存0处与内存0x100000处的值是否一致如果一致表示A20没有开启进入死循环*/
-	xorl %eax,%eax
-1:	incl %eax		# check that A20 really IS enabled
-	movl %eax,0x000000	# loop forever if it isn't
-	cmpl %eax,0x100000
+	xorl %eax,%eax		#异或
+1:	incl %eax			# 加一 check that A20 really IS enabled
+	movl %eax,0x000000	# 将ax寄存器中的数据写入内存0x0处 loop forever if it isn't
+	cmpl %eax,0x100000	#判断地址0x100000处的数据是否也为此值
 	je 1b
 /*
  * NOTE! 486 should set bit 16, to check for write-protect in supervisor
@@ -49,11 +49,11 @@ startup_32:
  */
 	/**检测数字协处理器是否存在*/
 	movl %cr0,%eax		# check math chip
-	andl $0x80000011,%eax	# Save PG,PE,ET
+	andl $0x80000011,%eax	#获取协处理器的部分值 Save PG,PE,ET
 /* "orl $0x10020,%eax" here for 486 might be good */
-	orl $2,%eax		# set MP
-	movl %eax,%cr0
-	call check_x87
+	orl $2,%eax		#进行或运算 set MP
+	movl %eax,%cr0	#将ax寄存器中的值写入到cr0寄存器中
+	call check_x87	#调用检测是否存在协处理器
 	jmp after_page_tables
 
 /*
@@ -64,14 +64,14 @@ check_x87:
 	fninit
 	fstsw %ax
 	cmpb $0,%al
-	je 1f			/* no coprocessor: have to set bits */
+	je 1f			/* 如果不存在协处理器调到前面的1标号处的程序no coprocessor: have to set bits */
 	movl %cr0,%eax
 	xorl $6,%eax		/* reset MP, set EM */
-	movl %eax,%cr0
-	ret
+	movl %eax,%cr0	#设置cr寄存器
+	ret				#调回到call check_x87处
 .align 2
 1:	.byte 0xDB,0xE4		/* fsetpm for 287, ignored by 387 */
-	ret
+	ret					#调回到call check_x87处
 
 /*
  *  setup_idt
@@ -97,11 +97,11 @@ setup_idt:
 	mov $256,%ecx
 rp_sidt:
 	movl %eax,(%edi)
-	movl %edx,4(%edi)
+	movl %edx,4(%edi) #此处的意思是将dx的值写入到di+4处
 	addl $8,%edi
 	dec %ecx
 	jne rp_sidt
-	lidt idt_descr
+	lidt idt_descr    #加载中断描述表
 	ret
 
 /*
@@ -123,7 +123,7 @@ setup_gdt:
  * using 4 of them to span 16 Mb of physical memory. People with
  * more than 16MB will have to expand this.
  */
-.org 0x1000
+.org 0x1000 #设置相对内存的偏移位置为0x1000的值
 pg0:
 
 .org 0x2000
@@ -141,21 +141,23 @@ pg3:
  * reach to a buffer-block. It needs to be aligned, so that it isn't
  * on a 64kB border.
  */
+ #设置相对于内存0x5000处的内容，
 _tmp_floppy_area:
-	.fill 1024,1,0
+	.fill 1024,1,0 #填充1024项每项1字节填充值为0
 
 after_page_tables:
-	pushl $0		# These are the parameters to main :-)
-	pushl $0
-	pushl $0
-	pushl $L6		# return address for main, if it decides to.
-	pushl $_main
-	jmp setup_paging
+	pushl $0		# envpThese are the parameters to main :-)
+	pushl $0		#argv
+	pushl $0		#argc
+	pushl $L6		#返回地址 return address for main, if it decides to.
+	pushl $_main	#程序地址
+	jmp setup_paging #跳转到setup_paging处
 L6:
 	jmp L6			# main should never return here, but
 				# just in case, we know what happens.
 
 /* This is the default interrupt "handler" :-) */
+/**下面是默认中断向量句柄*/
 int_msg:
 	.asciz "Unknown interrupt\n\r"
 .align 2
@@ -208,22 +210,26 @@ ignore_int:
  */
 .align 2
 setup_paging:
-	movl $1024*5,%ecx		/* 5 pages - pg_dir+4 page tables */
-	xorl %eax,%eax
-	xorl %edi,%edi			/* pg_dir is at 0x000 */
-	cld;rep;stosl
+	movl $1024*5,%ecx		/* 计算5页的字节长度5 pages - pg_dir+4 page tables */
+	xorl %eax,%eax			#设置ax寄存器的值为0
+	xorl %edi,%edi			/*设置di寄存器的值为0 pg_dir is at 0x000 */
+	cld;					#设置si和di的方向为递增方向
+	rep;					#设置重复次数
+	stosl					#设置美的di加4
+	#填写页目录表的参数
 	movl $pg0+7,_pg_dir		/* set present bit/user r/w */
 	movl $pg1+7,_pg_dir+4		/*  --------- " " --------- */
 	movl $pg2+7,_pg_dir+8		/*  --------- " " --------- */
 	movl $pg3+7,_pg_dir+12		/*  --------- " " --------- */
+	#设置4个页表的内容
 	movl $pg3+4092,%edi
 	movl $0xfff007,%eax		/*  16Mb - 4096 + 7 (r/w user,p) */
-	std
+	std				#设置si和di的方向为递减方向
 1:	stosl			/* fill pages backwards - more efficient :-) */
 	subl $0x1000,%eax
 	jge 1b
 	xorl %eax,%eax		/* pg_dir is at 0x0000 */
-	movl %eax,%cr3		/* cr3 - page directory start */
+	movl %eax,%cr3		/*设置cr3保存页目录表的地址 cr3 - page directory start */
 	movl %cr0,%eax
 	orl $0x80000000,%eax
 	movl %eax,%cr0		/* set paging (PG) bit */
@@ -232,8 +238,8 @@ setup_paging:
 .align 2
 .word 0
 idt_descr:
-	.word 256*8-1		# idt contains 256 entries
-	.long _idt
+	.word 256*8-1		#表长度 idt contains 256 entries
+	.long _idt			#表线性地址
 .align 2
 .word 0
 gdt_descr:

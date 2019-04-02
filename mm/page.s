@@ -10,9 +10,9 @@
  */
 
 .globl _page_fault
-
+/*页也默认*/
 _page_fault:
-	xchgl %eax,(%esp)
+	xchgl %eax,(%esp)  #交换值，ax存储sp地址对应的值
 	pushl %ecx
 	pushl %edx
 	push %ds
@@ -22,7 +22,7 @@ _page_fault:
 	mov %dx,%ds
 	mov %dx,%es
 	mov %dx,%fs
-	movl %cr2,%edx
+	movl %cr2,%edx  #将cr2寄存器的值赋给dx
 	pushl %edx
 	pushl %eax
 	testl $1,%eax

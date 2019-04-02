@@ -66,12 +66,12 @@ extern long startup_time;
  * bios-listing reading. Urghh.
  */
 
-/**读取CMOS数据值*/
+/**读取CMOS数据值，读取响应内存地址的数据*/
 #define CMOS_READ(addr) ({ \
 outb_p(0x80|addr,0x70); \
 inb_p(0x71); \
 })
-
+/**将BCD码转换为二进制数*/
 #define BCD_TO_BIN(val) ((val)=((val)&15) + ((val)>>4)*10)
 
 /**
@@ -152,9 +152,9 @@ void main(void)		/* This really IS void, no error here. */
 	tty_init();
 	/**时间初始化*/
 	time_init();
-	/***/
+	/**进程管理初始化*/
 	sched_init();
-	/***/
+	/**高速缓冲区初始化*/
 	buffer_init(buffer_memory_end);
 	/**硬盘初始化*/
 	hd_init();
@@ -179,6 +179,7 @@ void main(void)		/* This really IS void, no error here. */
  */
 	for(;;) 
 	{
+		/**对于task0来说是如果没有任务在执行就一直运行此段程序*/
 		pause();
 	}
 }

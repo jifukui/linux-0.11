@@ -38,7 +38,7 @@ static int month[12] = {
 	DAY*(31+29+31+30+31+30+31+31+30+31+30)
 };
 
-/**根据传入的tm数据*/
+/**根据传入的tm数据返回时间值，精确到秒*/
 long kernel_mktime(struct tm * tm)
 {
 	long res;

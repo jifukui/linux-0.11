@@ -30,6 +30,7 @@
 
 volatile void do_exit(long code);
 
+/***/
 static inline volatile void oom(void)
 {
 	printk("out of memory\n\r");
@@ -119,18 +120,28 @@ int free_page_tables(unsigned long from,unsigned long size)
 	unsigned long * dir, nr;
 
 	if (from & 0x3fffff)
+	{
 		panic("free_page_tables called with wrong alignment");
+	}
 	if (!from)
+	{
 		panic("Trying to free up swapper memory space");
+	}
 	size = (size + 0x3fffff) >> 22;
 	dir = (unsigned long *) ((from>>20) & 0xffc); /* _pg_dir = 0 */
-	for ( ; size-->0 ; dir++) {
+	for ( ; size-->0 ; dir++) 
+	{
 		if (!(1 & *dir))
+		{
 			continue;
+		}
 		pg_table = (unsigned long *) (0xfffff000 & *dir);
-		for (nr=0 ; nr<1024 ; nr++) {
+		for (nr=0 ; nr<1024 ; nr++) 
+		{
 			if (1 & *pg_table)
+			{
 				free_page(0xfffff000 & *pg_table);
+			}
 			*pg_table = 0;
 			pg_table++;
 		}
@@ -219,7 +230,7 @@ int copy_page_tables(unsigned long from,unsigned long to,long size)
  * out of memory (either when trying to access page-table or
  * page.)
  */
-/***/
+/**将页存储至物理磁盘中*/
 unsigned long put_page(unsigned long page,unsigned long address)
 {
 	unsigned long tmp, *page_table;

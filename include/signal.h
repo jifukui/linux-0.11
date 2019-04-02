@@ -45,6 +45,12 @@ typedef unsigned int sigset_t;		/* 32 bits */
 #define SIG_DFL		((void (*)(int))0)	/* default signal handling */
 #define SIG_IGN		((void (*)(int))1)	/* ignore signal */
 
+/**信号结构体
+ * sa_handler为信号处理函数
+ * sa_mask为信号屏蔽码
+ * sa_flags为信号标记
+ * sa_restorer为
+*/
 struct sigaction {
 	void (*sa_handler)(int);
 	sigset_t sa_mask;
