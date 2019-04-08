@@ -12,7 +12,13 @@
 #include <termios.h>
 
 #define TTY_BUF_SIZE 1024
-
+/**tty队列
+ * data：等待队列缓冲区中当前数据统计值，对于串口终端存放存储地址
+ * head:缓冲区中数据头指针
+ * tail：缓冲区中数据尾指针
+ * proc_list：等待本缓冲队列的进程列表
+ * buf：队列的缓冲区
+*/
 struct tty_queue {
 	unsigned long data;
 	unsigned long head;
@@ -41,9 +47,17 @@ struct tty_queue {
 #define START_CHAR(tty) ((tty)->termios.c_cc[VSTART])
 #define STOP_CHAR(tty) ((tty)->termios.c_cc[VSTOP])
 #define SUSPEND_CHAR(tty) ((tty)->termios.c_cc[VSUSP])
-
+/**tty结构
+ * termios：终端io属性
+ * pgrp：所属进程组
+ * stopped：停止标志
+ * write：写函数
+ * read_q：读队列
+ * write_q：写队列
+ * secondary：辅助队列
+*/
 struct tty_struct {
-	struct termios termios;
+	struct termios termios;	
 	int pgrp;
 	int stopped;
 	void (*write)(struct tty_struct * tty);

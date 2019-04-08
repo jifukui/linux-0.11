@@ -32,7 +32,9 @@
 #define TIOCGSOFTCAR	0x5419
 #define TIOCSSOFTCAR	0x541A
 #define TIOCINQ		0x541B
-
+/**窗口尺寸数据结构
+ * 
+*/
 struct winsize {
 	unsigned short ws_row;
 	unsigned short ws_col;
@@ -51,6 +53,14 @@ struct termio {
 };
 
 #define NCCS 17
+/**termios数据结构
+ * c_iflag：输入模式标志
+ * c_oflag：输出模式标志
+ * c_cflag：控制模式标志
+ * c_lflag：本地模式标志
+ * c_line：线路规程（速率）
+ * c_cc：控制字符
+*/
 struct termios {
 	unsigned long c_iflag;		/* input mode flags */
 	unsigned long c_oflag;		/* output mode flags */

@@ -47,7 +47,7 @@ struct i387_struct {
 	long	fos;
 	long	st_space[20];	/* 8*10 bytes for each FP-reg = 80 bytes */
 };
-
+/**定义*/
 struct tss_struct {
 	long	back_link;	/* 16 high bits zero */
 	long	esp0;
@@ -166,6 +166,7 @@ struct task_struct {
  *  INIT_TASK is used to set up the first task table, touch at
  * your own risk!. Base=0, limit=0x9ffff (=640kB)
  */
+/**初始化任务表*/
 #define INIT_TASK \
 /* state etc */	{ 0,15,15, \
 /* signals */	0,{{},},0, \
@@ -195,6 +196,7 @@ extern struct task_struct *current;
 extern long volatile jiffies;
 extern long startup_time;
 
+/**定义当前时间当前COMS时间加上时钟脉冲除以频率的时间*/
 #define CURRENT_TIME (startup_time+jiffies/HZ)
 
 extern void add_timer(long jiffies, void (*fn)(void));
@@ -205,13 +207,31 @@ extern void wake_up(struct task_struct ** p);
 /*
  * Entry into gdt where to find first TSS. 0-nul, 1-cs, 2-ds, 3-syscall
  * 4-TSS0, 5-LDT0, 6-TSS1 etc ...
+ * GDT表中的第一个表为空不进行使用
+ * 第2个表用于存放代码段
+ * 第3个表用于存放数据段
+ * 第4个表用于存放系统调用
+ * 第5个表用于存放TTS0
+ * 第6个表用于存放LDT0
  */
+/**定义TSS在GDT表中的位置*/
 #define FIRST_TSS_ENTRY 4
+/**定义第一个TSS进入点入口的位置*/
 #define FIRST_LDT_ENTRY (FIRST_TSS_ENTRY+1)
+/**获取TSS表的位置*/
 #define _TSS(n) ((((unsigned long) n)<<4)+(FIRST_TSS_ENTRY<<3))
+/**获取LDT表的位置*/
 #define _LDT(n) ((((unsigned long) n)<<4)+(FIRST_LDT_ENTRY<<3))
+/**将ax寄存器的值加载到任务寄存器*/
 #define ltr(n) __asm__("ltr %%ax"::"a" (_TSS(n)))
+/**将ax的值加载到ldt寄存器中*/
 #define lldt(n) __asm__("lldt %%ax"::"a" (_LDT(n)))
+/**用于获取当前任务的任务号
+ * 此处的str不是存储指令是存储任务寄存器的指令，此指令的作用是将任务寄存器中的可见部分加载到ax寄存器中
+ * 将i的值减去ax寄存器中的值
+ * 将数值4逻辑右移ax寄存器中的低5位
+ * 
+*/
 #define str(n) \
 __asm__("str %%ax\n\t" \
 	"subl %2,%%eax\n\t" \
@@ -224,6 +244,7 @@ __asm__("str %%ax\n\t" \
  * This also clears the TS-flag if the task we switched to has used
  * tha math co-processor latest.
  */
+/**切换任务到*/
 #define switch_to(n) {\
 struct {long a,b;} __tmp; \
 __asm__("cmpl %%ecx,_current\n\t" \
@@ -238,9 +259,11 @@ __asm__("cmpl %%ecx,_current\n\t" \
 	::"m" (*&__tmp.a),"m" (*&__tmp.b), \
 	"d" (_TSS(n)),"c" ((long) task[n])); \
 }
-
+/**定义页对齐*/
 #define PAGE_ALIGN(n) (((n)+0xfff)&0xfffff000)
-
+/**设置基地址
+ * 
+*/
 #define _set_base(addr,base) \
 __asm__("movw %%dx,%0\n\t" \
 	"rorl $16,%%edx\n\t" \
@@ -251,7 +274,7 @@ __asm__("movw %%dx,%0\n\t" \
 	  "m" (*((addr)+7)), \
 	  "d" (base) \
 	:"dx")
-
+/**设置限制*/
 #define _set_limit(addr,limit) \
 __asm__("movw %%dx,%0\n\t" \
 	"rorl $16,%%edx\n\t" \
@@ -266,7 +289,7 @@ __asm__("movw %%dx,%0\n\t" \
 
 #define set_base(ldt,base) _set_base( ((char *)&(ldt)) , base )
 #define set_limit(ldt,limit) _set_limit( ((char *)&(ldt)) , (limit-1)>>12 )
-
+/**得到基地址*/
 #define _get_base(addr) ({\
 unsigned long __base; \
 __asm__("movb %3,%%dh\n\t" \
@@ -280,7 +303,7 @@ __asm__("movb %3,%%dh\n\t" \
 __base;})
 
 #define get_base(ldt) _get_base( ((char *)&(ldt)) )
-
+/**得到限制*/
 #define get_limit(segment) ({ \
 unsigned long __limit; \
 __asm__("lsll %1,%0\n\tincl %0":"=r" (__limit):"r" (segment)); \

@@ -19,24 +19,27 @@
 #include <asm/segment.h>
 
 #include <signal.h>
-
+/**此宏的作用是获取对应信号位的值*/
 #define _S(nr) (1<<((nr)-1))
+/**此宏的作用是获取除SIGKILL和SIGSTOP信号之外的其他信号值*/
 #define _BLOCKABLE (~(_S(SIGKILL) | _S(SIGSTOP)))
 
 /**显示传入进程指针的状态
- * nr:
+ * nr:信号值
  * p：进程
 */
 void show_task(int nr,struct task_struct * p)
 {
-	int i,j = 4096-sizeof(struct task_struct);
-
+	int i;
+	int j = 4096-sizeof(struct task_struct);
+	/**输出信号值和当前进程id和进程状态*/
 	printk("%d: pid=%d, state=%d, ",nr,p->pid,p->state);
 	i=0;
 	while (i<j && !((char *)(p+1))[i])
 	{
 		i++;
 	}
+	/**输出当前使用的内核栈和总的内核栈的空间*/
 	printk("%d (of %d) chars free in kernel stack\n\r",i,j);
 }
 
@@ -89,16 +92,23 @@ struct {
 /***/
 void math_state_restore()
 {
+	/**如果最后使用协处理器的进程为当前的进程直接退出*/
 	if (last_task_used_math == current)
 	{
 		return;
 	}
+	/**等待*/
 	__asm__("fwait");
+	/**如果协处理器使用过，保存协处理器的状态*/
 	if (last_task_used_math) 
 	{
 		__asm__("fnsave %0"::"m" (last_task_used_math->tss.i387));
 	}
+	/**设置最后使用协处理器的任务号*/
 	last_task_used_math=current;
+	/**如果当前进程使用过协处理器，恢复协处理器的状态
+	 * 否则初始化协处理器
+	*/
 	if (current->used_math) 
 	{
 		__asm__("frstor %0"::"m" (current->tss.i387));

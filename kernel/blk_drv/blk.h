@@ -20,6 +20,17 @@
  * paging, 'bh' is NULL, and 'waiting' is used to wait for
  * read/write completion.
  */
+ /**请求数据结构
+  * dev：设备号
+  * cmd：读写命令
+  * errors：操作时产生的错误次数
+  * sector：起始扇区
+  * nr_sectors：扇区数量
+  * buffer：数据缓冲区
+  * waiting：任务等待操作执行完成的地方
+  * bh：缓冲区头指针
+  * next:下一个请求指针
+ */
 struct request {
 	int dev;		/* -1 if no request */
 	int cmd;		/* READ or WRITE */
@@ -41,7 +52,10 @@ struct request {
 ((s1)->cmd<(s2)->cmd || (s1)->cmd==(s2)->cmd && \
 ((s1)->dev < (s2)->dev || ((s1)->dev == (s2)->dev && \
 (s1)->sector < (s2)->sector)))
-
+/**块设备结构
+ * request_fn函数指针指向调用的函数
+ * current_request当前请求项指针
+*/
 struct blk_dev_struct {
 	void (*request_fn)(void);
 	struct request * current_request;
@@ -97,30 +111,53 @@ extern struct task_struct * wait_for_request;
 void (*DEVICE_INTR)(void) = NULL;
 #endif
 static void (DEVICE_REQUEST)(void);
-
+/**解锁指定的缓冲区*/
 extern inline void unlock_buffer(struct buffer_head * bh)
 {
+	/**对于未上锁的缓冲区的处理
+	 * 内核打印输出信息
+	*/
 	if (!bh->b_lock)
+	{
 		printk(DEVICE_NAME ": free buffer being unlocked\n");
+	}
+	/**设置此缓冲区未上锁*/
 	bh->b_lock=0;
+	/**唤醒*/
 	wake_up(&bh->b_wait);
 }
-
+/**最后一个请求的处理
+ * 
+*/
 extern inline void end_request(int uptodate)
 {
+	/**关闭设备*/
 	DEVICE_OFF(CURRENT->dev);
-	if (CURRENT->bh) {
+	/**判断当前进程的缓冲区头部是否有值*/
+	if (CURRENT->bh) 
+	{
+		/**设置当前缓冲区的更新标志*/
 		CURRENT->bh->b_uptodate = uptodate;
+		/**设置当前缓冲区解锁*/
 		unlock_buffer(CURRENT->bh);
 	}
-	if (!uptodate) {
+	/**对于更新标志为0的处理，
+	 * 更新标志为0表示当前操作失败
+	*/
+	if (!uptodate) 
+	{
+		/**内核输出相关信息*/
 		printk(DEVICE_NAME " I/O error\n\r");
 		printk("dev %04x, block %d\n\r",CURRENT->dev,
 			CURRENT->bh->b_blocknr);
 	}
+	/**唤醒等待该请求项的进程*/
 	wake_up(&CURRENT->waiting);
+	/**唤醒等待空闲请求项出现的进程*/
 	wake_up(&wait_for_request);
+	/**设置当前进程的设备为-1*/
 	CURRENT->dev = -1;
+	/**设置当前进程，指向下一个进程*/
 	CURRENT = CURRENT->next;
 }
 

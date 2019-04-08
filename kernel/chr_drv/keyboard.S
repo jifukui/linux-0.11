@@ -18,15 +18,19 @@
 /*
  * these are for the keyboard read functions
  */
+ /**键盘缓冲区*/
 size	= 1024		/* must be a power of two ! And MUST be the same
 			   as in tty_io.c !!!! */
+/**设置一下对象在tty队列对象中的位置*/
 head = 4
 tail = 8
 proc_list = 12
 buf = 16
-
+/**特殊键按下标志*/
 mode:	.byte 0		/* caps, alt, ctrl and shift mode */
+/**键盘指示灯标志*/
 leds:	.byte 2		/* num-lock, caps, scroll-lock mode (nom-lock on) */
+/***/
 e0:	.byte 0
 
 /*
@@ -34,6 +38,7 @@ e0:	.byte 0
  *  keyboard scan-code and converts it into the appropriate
  *  ascii character(s).
  */
+ /**键盘中断处理函数*/
 _keyboard_interrupt:
 	pushl %eax
 	pushl %ebx
@@ -45,27 +50,46 @@ _keyboard_interrupt:
 	mov %ax,%ds
 	mov %ax,%es
 	xorl %al,%al		/* %eax is scan code */
+	/**读取扫描码*/
 	inb $0x60,%al
+	/**判断扫描码为0xe0的处理*/
 	cmpb $0xe0,%al
 	je set_e0
+	/**判断扫描码为0xe1的处理*/
 	cmpb $0xe1,%al
 	je set_e1
+	/**扫描码不为上述的值，进行处理*/
 	call key_table(,%eax,4)
+	/**复位e0的参数*/
 	movb $0,e0
-e0_e1:	inb $0x61,%al
+e0_e1:
+	/**读取端口B状态*/	
+	inb $0x61,%al
+	/**延迟一会*/
 	jmp 1f
+	/**跳转到一下一个标志1处*/
 1:	jmp 1f
+	/**设置al的值第7位的值为1*/
 1:	orb $0x80,%al
+	/**延迟一会*/
 	jmp 1f
+	/**跳转到后面标志为1处*/
 1:	jmp 1f
+	/**设置禁止io*/
 1:	outb %al,$0x61
 	jmp 1f
 1:	jmp 1f
+	/**保留al低7位的值设置第7位的值为0*/
 1:	andb $0x7F,%al
+	/**允许键盘工作*/
 	outb %al,$0x61
+	/**设置al的值为0x20及设置中断结束标志*/
 	movb $0x20,%al
+	/**向芯片发送中断结束信号*/
 	outb %al,$0x20
+	/**控制台号0进程压栈*/
 	pushl $0
+	/**调用中断处理函数*/
 	call _do_tty_interrupt
 	addl $4,%esp
 	pop %es
@@ -75,8 +99,10 @@ e0_e1:	inb $0x61,%al
 	popl %ebx
 	popl %eax
 	iret
+	/**设置e0的值为1*/
 set_e0:	movb $1,e0
 	jmp e0_e1
+	/**设置e0的值为2*/
 set_e1:	movb $2,e0
 	jmp e0_e1
 
@@ -85,37 +111,68 @@ set_e1:	movb $2,e0
  * %ebx:%eax. (%edx is high). The bytes are written in the
  * order %al,%ah,%eal,%eah,%bl,%bh ... until %eax is zero.
  */
+ /***/
 put_queue:
+	/**cx入栈*/
 	pushl %ecx
+	/**dx入栈*/
 	pushl %edx
+	/**将_table_list的值地址赋值给dx*/
 	movl _table_list,%edx		# read-queue for console
+	/**head的值赋值给cx*/
 	movl head(%edx),%ecx
+	/**al的值赋值给buf的dx的cx处*/
 1:	movb %al,buf(%edx,%ecx)
+	/**cx的值加一*/
 	incl %ecx
+	/***/
 	andl $size-1,%ecx
+	/**判断缓冲区是否满*/
 	cmpl tail(%edx),%ecx		# buffer full - discard everything
 	je 3f
+	/**将bx的数值右移8位存放到ax中，bx的值不变*/
 	shrdl $8,%ebx,%eax
+	/**判断是否还有字符，如果没有则跳转*/
 	je 2f
+	/**如果还有字符，设置bx的值右移8位*/
 	shrl $8,%ebx
 	jmp 1b
+	/**设置cx的值为head的参数值，即所有的参数都已经放入队列中保存头指针*/
 2:	movl %ecx,head(%edx)
+	/**设置等待该队列的进程*/
 	movl proc_list(%edx),%ecx
+	/**判断cx的值是否为0，即判断是否有等待该队列的进程*/
 	testl %ecx,%ecx
+	/**无，跳转*/
 	je 3f
+	/**有，唤醒进程*/
 	movl $0,(%ecx)
 3:	popl %edx
 	popl %ecx
 	ret
-
+/**控制键
+*设置al的值为4
+*然后跳转到后面1处
+*/
 ctrl:	movb $0x04,%al
 	jmp 1f
+/**alt键
+*设置al的值为0x10
+*/
 alt:	movb $0x10,%al
+/**判断e0的值是否为0
+*为0跳转到后面的2处
+*不为0设置al的值为al+al取第8位
+*/
 1:	cmpb $0,e0
 	je 2f
 	addb %al,%al
+/**设置mode的值为与al或的值
+*返回调用
+*/
 2:	orb %al,mode
 	ret
+/***/
 unctrl:	movb $0x04,%al
 	jmp 1f
 unalt:	movb $0x10,%al
@@ -125,10 +182,11 @@ unalt:	movb $0x10,%al
 2:	notb %al
 	andb %al,mode
 	ret
-
+/**设置mode的值的第0位为1*/
 lshift:
 	orb $0x01,mode
 	ret
+/**设置mode的值的第0位为0 其他位不变*/
 unlshift:
 	andb $0xfe,mode
 	ret

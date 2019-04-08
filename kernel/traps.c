@@ -22,6 +22,13 @@
 /**获取寄存器中的字节值
  * seg：段选择
  * addr：地址
+ * 汇编语言分为4部分
+ * 1汇编部分
+ * 2输出部分
+ * 3输入部分
+ * 4修改过寄存器的列表
+ * 其中的数字表述传入的数据的参数值即传入数据的顺序
+ * 和AT&T汇编不同方向是正的
 */
 #define get_seg_byte(seg,addr) ({ \
 register char __res; \
@@ -34,7 +41,7 @@ register unsigned long __res; \
 __asm__("push %%fs;mov %%ax,%%fs;movl %%fs:%2,%%eax;pop %%fs" \
 	:"=a" (__res):"0" (seg),"m" (*(addr))); \
 __res;})
-/***/
+/**获取用户数据段的数据*/
 #define _fs() ({ \
 register unsigned short __res; \
 __asm__("mov %%fs,%%ax":"=a" (__res):); \
@@ -73,11 +80,21 @@ static void die(char * str,long esp_ptr,long nr)
 {
 	long * esp = (long *) esp_ptr;
 	int i;
-
+	/**内核输出错误中断名称和中断号*/
 	printk("%s: %04x\n\r",str,nr&0xffff);
+	/**内核输出CS:IP,EFLAGS，SS:SP的值
+	 * esp[0]：ip
+	 * esp[1]:cs
+	 * esp[2]:eflags
+	 * esp[3]：原sp
+	 * esp[4]:原ss
+	*/
 	printk("EIP:\t%04x:%p\nEFLAGS:\t%p\nESP:\t%04x:%p\n",esp[1],esp[0],esp[2],esp[4],esp[3]);
+	/**打印fs寄存器的值*/
 	printk("fs: %04x\n",_fs());
+	/**打印基地址和长度限制*/
 	printk("base: %p, limit: %p\n",get_base(current->ldt[1]),get_limit(0x17));
+	/**对于原SS的值为17的输出16字节*/
 	if (esp[4] == 0x17) 
 	{
 		printk("Stack: ");
@@ -87,13 +104,17 @@ static void die(char * str,long esp_ptr,long nr)
 		}
 		printk("\n");
 	}
+	/**获取当前任务号*/
 	str(i);
+	/**输出当前进程号和任务号*/
 	printk("Pid: %d, process nr: %d\n\r",current->pid,0xffff & i);
+	/**输出后续的10个字节的内容*/
 	for(i=0;i<10;i++)
 	{
 		printk("%02x ",0xff & get_seg_byte(esp[1],(i+(char *)esp[0])));
 	}
 	printk("\n\r");
+	/**设置退出码为11*/
 	do_exit(11);		/* play segment exception */
 }
 

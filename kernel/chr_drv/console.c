@@ -288,7 +288,9 @@ static void csi_K(int par)
 	{
 		case 0:	/* erase from cursor to end of line */
 			if (x>=video_num_columns)
+			{
 				return;
+			}
 			count = video_num_columns-x;
 			start = pos;
 			break;
